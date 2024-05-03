@@ -5,7 +5,6 @@ import (
 	"sistem_peminjaman_be/models"
 	"sistem_peminjaman_be/repositories"
 	"errors"
-	"strings"
 )
 
 type LabUsecase interface {
@@ -31,30 +30,7 @@ func NewLabUsecase(labRepo repositories.LabRepository, labImageRepo repositories
 	return &labUsecase{labRepo, labImageRepo, historySearchRepo, userRepo, historySeenLabUsecase}
 }
 
-// =============================== ADMIN ================================== \\
 
-// GetAllHotels godoc
-// @Summary      Get all hotel
-// @Description  Get all hotel
-// @Tags         Admin - Hotel
-// @Accept       json
-// @Produce      json
-// @Param page query int false "Page number"
-// @Param limit query int false "Number of items per page"
-// @Param minimum_price query int false "Filter minimum price"
-// @Param maximum_price query int false "Filter maximum price"
-// @Param rating_class query int false "Filter rating class" Enums(1,2,3,4,5)
-// @Param address query string false "Search address hotel"
-// @Param name query string false "Search name hotel"
-// @Param sort_by_price query string false "Filter by price" Enums(asc, desc)
-// @Param recomendation query bool false "Recomendation filter"
-// @Success      200 {object} dtos.GetAllHotelStatusOKResponses
-// @Failure      400 {object} dtos.BadRequestResponse
-// @Failure      401 {object} dtos.UnauthorizedResponse
-// @Failure      403 {object} dtos.ForbiddenResponse
-// @Failure      404 {object} dtos.NotFoundResponse
-// @Failure      500 {object} dtos.InternalServerErrorResponse
-// @Router       /public/hotel [get]
 func (u *labUsecase) GetAllLabs(page, limit int, name string) ([]dtos.LabResponse, int, error) {
 	labs, count, err := u.labRepo.SearchLabAvailable(page, limit, name)
 	if err != nil {
@@ -94,21 +70,6 @@ func (u *labUsecase) GetAllLabs(page, limit int, name string) ([]dtos.LabRespons
 	return labResponses, count, nil
 }
 
-// GetHotelByID godoc
-// @Summary      Get hotel by ID
-// @Description  Get hotel by ID
-// @Tags         Admin - Hotel
-// @Accept       json
-// @Produce      json
-// @Param id path integer true "ID Hotel"
-// @Success      200 {object} dtos.HotelByIDStatusOKResponses
-// @Failure      400 {object} dtos.BadRequestResponse
-// @Failure      401 {object} dtos.UnauthorizedResponse
-// @Failure      403 {object} dtos.ForbiddenResponse
-// @Failure      404 {object} dtos.NotFoundResponse
-// @Failure      500 {object} dtos.InternalServerErrorResponse
-// @Router       /public/hotel/{id} [get]
-// @Security BearerAuth
 func (u *labUsecase) GetLabByID(userId, id uint) (dtos.LabByIDResponse, error) {
 	var labResponses dtos.LabByIDResponse
 	lab, err := u.labRepo.GetLabByID(id)
@@ -151,21 +112,7 @@ func (u *labUsecase) GetLabByID(userId, id uint) (dtos.LabByIDResponse, error) {
 	return labResponse, nil
 }
 
-// CreateHotel godoc
-// @Summary      Create a new hotel
-// @Description  Create a new hotel
-// @Tags         Admin - Hotel
-// @Accept       json
-// @Produce      json
-// @Param        request body dtos.HotelInput true "Payload Body [RAW]"
-// @Success      201 {object} dtos.HotelCreeatedResponses
-// @Failure      400 {object} dtos.BadRequestResponse
-// @Failure      401 {object} dtos.UnauthorizedResponse
-// @Failure      403 {object} dtos.ForbiddenResponse
-// @Failure      404 {object} dtos.NotFoundResponse
-// @Failure      500 {object} dtos.InternalServerErrorResponse
-// @Router       /admin/hotel [post]
-// @Security BearerAuth
+
 func (u *labUsecase) CreateLab(lab *dtos.LabInput) (dtos.LabResponse, error) {
 	var labResponse dtos.LabResponse
 	if lab.Name == "" || lab.LabImage == nil || lab.Description == "" {
@@ -221,22 +168,7 @@ func (u *labUsecase) CreateLab(lab *dtos.LabInput) (dtos.LabResponse, error) {
 	return labResponse, nil
 }
 
-// UpdateHotel godoc
-// @Summary      Update hotel
-// @Description  Update hotel
-// @Tags         Admin - Hotel
-// @Accept       json
-// @Produce      json
-// @Param id path integer true "ID hotel"
-// @Param        request body dtos.HotelInput true "Payload Body [RAW]"
-// @Success      200 {object} dtos.HotelStatusOKResponses
-// @Failure      400 {object} dtos.BadRequestResponse
-// @Failure      401 {object} dtos.UnauthorizedResponse
-// @Failure      403 {object} dtos.ForbiddenResponse
-// @Failure      404 {object} dtos.NotFoundResponse
-// @Failure      500 {object} dtos.InternalServerErrorResponse
-// @Router       /admin/hotel/{id} [put]
-// @Security BearerAuth
+
 func (u *labUsecase) UpdateLab(id uint, lab dtos.LabInput) (dtos.LabResponse, error) {
 	var labs models.Lab
 	var labResponse dtos.LabResponse
@@ -299,52 +231,12 @@ func (u *labUsecase) UpdateLab(id uint, lab dtos.LabInput) (dtos.LabResponse, er
 	return labResponse, nil
 }
 
-// DeleteHotel godoc
-// @Summary      Delete a hotel
-// @Description  Delete a hotel
-// @Tags         Admin - Hotel
-// @Accept       json
-// @Produce      json
-// @Param id path integer true "ID Hotel"
-// @Success      200 {object} dtos.StatusOKDeletedResponse
-// @Failure      400 {object} dtos.BadRequestResponse
-// @Failure      401 {object} dtos.UnauthorizedResponse
-// @Failure      403 {object} dtos.ForbiddenResponse
-// @Failure      404 {object} dtos.NotFoundResponse
-// @Failure      500 {object} dtos.InternalServerErrorResponse
-// @Router       /admin/hotel/{id} [delete]
-// @Security BearerAuth
+
 func (u *labUsecase) DeleteLab(id uint) error {
-	// u.hotelImageRepo.DeleteHotelImage(id)
-	// u.hotelFacilitiesRepo.DeleteHotelFacilities(id)
-	// u.hotelPoliciesRepo.DeleteHotelPolicies(id)
 	return u.labRepo.DeleteLab(id)
 }
 
-// =============================== USER ================================== \\
 
-// SearchHotelAvailable godoc
-// @Summary      Search Hotel Available
-// @Description  Search Hotel
-// @Tags         User - Hotel
-// @Accept       json
-// @Produce      json
-// @Param page query int false "Page number"
-// @Param limit query int false "Number of items per page"
-// @Param minimum_price query int false "Filter minimum price"
-// @Param maximum_price query int false "Filter maximum price"
-// @Param rating_class query int false "Filter rating class" Enums(1,2,3,4,5)
-// @Param address query string false "Search address hotel"
-// @Param name query string false "Search name hotel"
-// @Param sort_by_price query string false "Filter by price" Enums(asc, desc)
-// @Success      200 {object} dtos.GetAllHotelStatusOKResponses
-// @Failure      400 {object} dtos.BadRequestResponse
-// @Failure      401 {object} dtos.UnauthorizedResponse
-// @Failure      403 {object} dtos.ForbiddenResponse
-// @Failure      404 {object} dtos.NotFoundResponse
-// @Failure      500 {object} dtos.InternalServerErrorResponse
-// @Router       /user/hotel/search [get]
-// @Security BearerAuth
 func (u *labUsecase) SearchLabAvailable(userId, page, limit int, name string) ([]dtos.LabResponse, int, error) {
 	labs, count, err := u.labRepo.SearchLabAvailable(page, limit, name)
 	if err != nil {

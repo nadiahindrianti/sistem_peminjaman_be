@@ -1,12 +1,12 @@
 package routes
 
 import (
+	"log"
+	"net/http"
 	"sistem_peminjaman_be/controllers"
 	"sistem_peminjaman_be/middlewares"
 	"sistem_peminjaman_be/repositories"
 	"sistem_peminjaman_be/usecases"
-	"log"
-	"net/http"
 
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
@@ -26,11 +26,17 @@ func Init(e *echo.Echo, db *gorm.DB) {
 	}
 
 	templateMessageRepository := repositories.NewTemplateMessageRepository(db)
+	userRepository := repositories.NewUserRepository(db)
+	notificationRepository := repositories.NewNotificationRepository(db)
+	historySearchRepository := repositories.NewHistorySearchRepository(db)
+	labImageRepository := repositories.NewLabImageRepository(db)
+	labRepository := repositories.NewLabRepository(db)
+	historySeenLabRepository := repositories.NewHistorySeenLabRepository(db)
+
 	templateMessageUsecase := usecases.NewTemplateMessageUsecase(templateMessageRepository)
 	templateMessageController := controllers.NewTemplateMessageController(templateMessageUsecase)
 
-	userRepository := repositories.NewUserRepository(db)
-	notificationRepository := repositories.NewNotificationRepository(db)
+	
 
 	userUsecase := usecases.NewUserUsecase(userRepository, notificationRepository)
 	userController := controllers.NewUserController(userUsecase)
@@ -38,21 +44,17 @@ func Init(e *echo.Echo, db *gorm.DB) {
 	cloudinaryUsecase := usecases.NewMediaUpload()
 	cloudinaryController := controllers.NewCloudinaryController(cloudinaryUsecase)
 
-
 	notificationUsecase := usecases.NewNotificationUsecase(notificationRepository, templateMessageRepository, userRepository)
 	notificationController := controllers.NewNotificationController(notificationUsecase)
 
-	historySearchRepository := repositories.NewHistorySearchRepository(db)
+	
 	historySearchUsecase := usecases.NewHistorySearchUsecase(historySearchRepository, userRepository)
 	historySearchController := controllers.NewHistorySearchController(historySearchUsecase)
 
-	historySeenLabRepository := repositories.NewHistorySeenLabRepository(db)
 	historySeenLabUsecase := usecases.NewHistorySeenLabUsecase(historySeenLabRepository, labRepository, labImageRepository)
 	historySeenLabController := controllers.NewHistorySeenLabController(historySeenLabUsecase)
 
-	labImageRepository := repositories.NewLabImageRepository(db)
-
-	labRepository := repositories.NewLabRepository(db)
+	
 	labUsecase := usecases.NewLabUsecase(labRepository, labImageRepository, historySearchRepository, userRepository, historySeenLabUsecase)
 	labController := controllers.NewLabController(labUsecase)
 
@@ -83,24 +85,18 @@ func Init(e *echo.Echo, db *gorm.DB) {
 	user.PUT("/update-photo-profile", userController.UserUpdatePhotoProfile)
 	user.DELETE("/delete-photo-profile", userController.UserDeletePhotoProfile)
 
-
 	user.GET("/notification", notificationController.GetNotificationByUserID)
 
 	// user lab
 	user.GET("/lab/search", labController.SearchLabAvailable)
-
 
 	//user search
 	user.GET("/history-search", historySearchController.HistorySearchGetAll)
 	user.POST("/history-search", historySearchController.HistorySearchCreate)
 	user.DELETE("/history-search/:id", historySearchController.HistorySearchDelete)
 
-
 	//user search lab
 	user.GET("/history-seen-lab", historySeenLabController.GetAllHistorySeenLabs)
-
-
-
 
 	// ADMIN
 	admin := api.Group("/admin")
@@ -112,13 +108,11 @@ func Init(e *echo.Echo, db *gorm.DB) {
 	admin.POST("/user/register", userController.UserAdminRegister)
 	admin.PUT("/user/update/:id", userController.UserAdminUpdate)
 
-
 	public.GET("/template-message", templateMessageController.GetAllTemplateMessages)
 	public.GET("/template-message/:id", templateMessageController.GetTemplateMessageByID)
 	public.PUT("/template-message/:id", templateMessageController.UpdateTemplateMessage)
 	public.POST("/template-message", templateMessageController.CreateTemplateMessage)
 	public.DELETE("/template-message/:id", templateMessageController.DeleteTemplateMessage)
-
 
 	public.GET("/lab", labController.GetAllLabs)
 	public.GET("/lab/:id", labController.GetLabByID)

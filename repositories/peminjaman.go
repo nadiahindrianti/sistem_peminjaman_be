@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"sistem_peminjaman_be/models"
-	"time"
 
 	"gorm.io/gorm"
 )

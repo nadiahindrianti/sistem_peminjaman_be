@@ -22,22 +22,7 @@ func NewHistorySeenLabUsecase(historySeenLabRepo repositories.HistorySeenLabRepo
 	return &historySeenLabUsecase{historySeenLabRepo, labRepo, labImageRepo}
 }
 
-// GetAllHistorySeenHotels godoc
-// @Summary      Get all history seen hotel by user id
-// @Description  Get all history seen hotel by user id
-// @Tags         User - History Seen
-// @Accept       json
-// @Produce      json
-// @Param page query int false "Page number"
-// @Param limit query int false "Number of items per page"
-// @Success      200 {object} dtos.GetAllHistorySeenHotelStatusOKResponse
-// @Failure      400 {object} dtos.BadRequestResponse
-// @Failure      401 {object} dtos.UnauthorizedResponse
-// @Failure      403 {object} dtos.ForbiddenResponse
-// @Failure      404 {object} dtos.NotFoundResponse
-// @Failure      500 {object} dtos.InternalServerErrorResponse
-// @Router       /user/history-seen-hotel [get]
-// @Security BearerAuth
+
 func (u *historySeenLabUsecase) GetAllHistorySeenLabs(page, limit int, userId uint) ([]dtos.HistorySeenLabResponse, int, error) {
 	historySeenLabs, count, err := u.historySeenLabRepo.GetAllHistorySeenLab(page, limit, userId)
 	if err != nil {

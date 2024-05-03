@@ -9,5 +9,5 @@ type User struct {
 	Password       string
 	NIMNIP         string
 	ProfilePicture string
-	Role           string `gorm:"type:ENUM('customer','admin')"`
+	Role           string `gorm:"type:ENUM('user','admin')"`
 }

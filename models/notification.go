@@ -8,5 +8,4 @@ type Notification struct {
 	User          User            `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	TemplateID    uint            `json:"template_id" form:"template_id"`
 	Template      TemplateMessage `gorm:"foreignKey:TemplateID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	PeminjamanID  uint            `json:"peminjaman_id" form:"peminjaman_id"`
 }

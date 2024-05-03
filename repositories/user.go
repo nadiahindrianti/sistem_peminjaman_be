@@ -36,7 +36,7 @@ func (r *userRepository) UserGetAll(page, limit int, search string) ([]models.Us
 
 	offset := (page - 1) * limit
 
-	err = r.db.Unscoped().Where("role = 'user' AND full_name LIKE ? OR role = 'user' AND email LIKE ? OR role = 'user' AND phone_number LIKE ?", "%"+search+"%", "%"+search+"%", "%"+search+"%").Order("id DESC").Limit(limit).Offset(offset).Find(&users).Error
+	err = r.db.Unscoped().Where("role = 'user' AND full_name LIKE ? OR role = 'user' AND email LIKE ?", "%"+search+"%", "%"+search+"%").Order("id DESC").Limit(limit).Offset(offset).Find(&users).Error
 
 	return users, int(count), err
 }

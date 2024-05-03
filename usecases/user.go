@@ -71,17 +71,7 @@ func (u *userUsecase) UserLogin(input dtos.UserLoginInput) (dtos.UserInformation
 		return userResponse, err
 	}
 
-	for i := 1; i <= 2; i++ {
-		createNotification := models.Notification{
-			UserID:     user.ID,
-			TemplateID: uint(i),
-		}
-
-		_, err = u.notificationRepo.CreateNotification(createNotification)
-		if err != nil {
-			return userResponse, err
-		}
-	}
+	
 
 	userResponse.ID = user.ID
 	userResponse.FullName = user.FullName
