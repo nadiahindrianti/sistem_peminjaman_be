@@ -10,9 +10,10 @@ type PeminjamanRepository interface {
 	GetPeminjamans(page, limit int, userID uint, status string) ([]models.Peminjaman, int, error)
 	GetPeminjamanByStatusAndID(id, userID uint, status string) (models.Peminjaman, error)
 	GetPeminjamanByID(id, userID uint) (models.Peminjaman, error)
+	//GetPeminjamanID(peminjamanId string) (models.Peminjaman, error)
 	CreatePeminjaman(peminjaman models.Peminjaman) (models.Peminjaman, error)
 	UpdatePeminjaman(peminjaman models.Peminjaman) (models.Peminjaman, error)
-	DeletePeminjaman(peminjaman models.Peminjaman) (models.Peminjaman, error)
+	DeletePeminjaman(id uint ) error
 }
 
 type peminjamanRepository struct {
@@ -85,6 +86,12 @@ func (r *peminjamanRepository) GetPeminjamanByID(id, userID uint) (models.Peminj
 	return peminjaman, err
 }
 
+//func (r *peminjamanRepository) GetPeminjamanID(peminjamanId string) (models.Peminjaman, error) {
+//	var peminjaman models.Peminjaman
+//	err := r.db.Where("id = ?", peminjamanId).First(&peminjaman).Error
+//	return peminjaman, err
+//}
+
 func (r *peminjamanRepository) CreatePeminjaman(peminjaman models.Peminjaman) (models.Peminjaman, error) {
 	err := r.db.Create(&peminjaman).Error
 	return peminjaman, err
@@ -95,8 +102,9 @@ func (r *peminjamanRepository) UpdatePeminjaman(peminjaman models.Peminjaman) (m
 	return peminjaman, err
 }
 
-func (r *peminjamanRepository) DeletePeminjaman(peminjaman models.Peminjaman) (models.Peminjaman, error) {
-	err := r.db.Unscoped().Delete(&peminjaman).Error
-	return peminjaman, err
+func (r *peminjamanRepository) DeletePeminjaman(id uint) error {
+	var peminjaman models.Peminjaman
+	err := r.db.Where("id = ?", id).Delete(&peminjaman).Error
+	return err
 }
 

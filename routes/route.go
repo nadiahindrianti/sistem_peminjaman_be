@@ -31,7 +31,11 @@ func Init(e *echo.Echo, db *gorm.DB) {
 	historySearchRepository := repositories.NewHistorySearchRepository(db)
 	labImageRepository := repositories.NewLabImageRepository(db)
 	labRepository := repositories.NewLabRepository(db)
+	beritaAcaraImageRepository := repositories.NewBeritaAcaraImageRepository(db)
+	jadwalRepository := repositories.NewJadwalRepository(db)
 	historySeenLabRepository := repositories.NewHistorySeenLabRepository(db)
+	suratRekomendasiImageRepository := repositories.NewSuratRekomendasiImageRepository(db)
+	peminjamanRepository := repositories.NewPeminjamanRepository(db)
 
 	templateMessageUsecase := usecases.NewTemplateMessageUsecase(templateMessageRepository)
 	templateMessageController := controllers.NewTemplateMessageController(templateMessageUsecase)
@@ -58,6 +62,12 @@ func Init(e *echo.Echo, db *gorm.DB) {
 	labUsecase := usecases.NewLabUsecase(labRepository, labImageRepository, historySearchRepository, userRepository, historySeenLabUsecase)
 	labController := controllers.NewLabController(labUsecase)
 
+	jadwalUsecase := usecases.NewJadwalUsecase(jadwalRepository, beritaAcaraImageRepository, userRepository)
+	jadwalController := controllers.NewJadwalController(jadwalUsecase)
+
+	peminjamanUsecase := usecases.NewPeminjamanUsecase(peminjamanRepository, suratRekomendasiImageRepository, labRepository, labImageRepository, userRepository)
+	peminjamanController := controllers.NewPeminjamanController(peminjamanUsecase)
+
 	// Middleware CORS
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"}, // Izinkan semua domain
@@ -74,6 +84,7 @@ func Init(e *echo.Echo, db *gorm.DB) {
 	// USER
 	api.POST("/login", userController.UserLogin)
 	api.POST("/register", userController.UserRegister)
+	api.POST("/register/admin", userController.AdminRegister)
 
 	user := api.Group("/user")
 	user.Use(middlewares.JWTMiddleware, middlewares.RoleMiddleware("user"))
@@ -89,6 +100,9 @@ func Init(e *echo.Echo, db *gorm.DB) {
 
 	// user lab
 	user.GET("/lab/search", labController.SearchLabAvailable)
+
+	// user jadwal
+	user.GET("/jadwal/search", jadwalController.SearchJadwalAvailable)
 
 	//user search
 	user.GET("/history-search", historySearchController.HistorySearchGetAll)
@@ -112,11 +126,24 @@ func Init(e *echo.Echo, db *gorm.DB) {
 	public.GET("/template-message/:id", templateMessageController.GetTemplateMessageByID)
 	public.PUT("/template-message/:id", templateMessageController.UpdateTemplateMessage)
 	public.POST("/template-message", templateMessageController.CreateTemplateMessage)
-	public.DELETE("/template-message/:id", templateMessageController.DeleteTemplateMessage)
 
 	public.GET("/lab", labController.GetAllLabs)
 	public.GET("/lab/:id", labController.GetLabByID)
 	admin.PUT("/lab/:id", labController.UpdateLab)
 	admin.POST("/lab", labController.CreateLab)
 	admin.DELETE("/lab/:id", labController.DeleteLab)
+
+	public.GET("/jadwal", jadwalController.GetAllJadwals)
+	public.GET("/jadwal/:id", jadwalController.GetJadwalByID)
+	admin.PUT("/jadwal/:id", jadwalController.UpdateJadwal)
+	admin.POST("/jadwal", jadwalController.CreateJadwal)
+	admin.DELETE("/jadwal/:id", jadwalController.DeleteJadwal)
+
+	user.GET("/peminjaman", peminjamanController.GetAllPeminjamans)
+	user.GET("/peminjaman/:id", peminjamanController.GetPeminjamanByID)
+	admin.GET("/peminjaman", peminjamanController.GetPeminjamansByAdmin)
+	public.GET("/peminjaman/:id", peminjamanController.GetPeminjamanByID)
+	admin.PUT("/peminjaman/:id", peminjamanController.UpdatePeminjaman)
+	user.POST("/peminjaman", peminjamanController.CreatePeminjaman)
+	admin.DELETE("/peminjaman/:id", peminjamanController.DeletePeminjaman)
 }

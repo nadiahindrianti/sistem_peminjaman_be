@@ -47,7 +47,7 @@ func (u *templateMessageUsecase) GetAllTemplateMessages(page, limit int) ([]dtos
 	var templateMessageResponses []dtos.TemplateMessageResponse
 	for _, template := range templates {
 		templateResponse := dtos.TemplateMessageResponse{
-			TemplateMessageID: template.ID,
+			TemplateID: template.ID,
 			Title:             template.Title,
 			Content:           template.Content,
 			CreatedAt:         template.CreatedAt,
@@ -80,7 +80,7 @@ func (u *templateMessageUsecase) GetTemplateMessageByID(id uint) (dtos.TemplateM
 		return templateResponses, err
 	}
 	templateResponse := dtos.TemplateMessageResponse{
-		TemplateMessageID: template.ID,
+		TemplateID: template.ID,
 		Title:             template.Title,
 		Content:           template.Content,
 		CreatedAt:         template.CreatedAt,
@@ -125,7 +125,7 @@ func (u *templateMessageUsecase) CreateTemplateMessage(templateInput *dtos.Templ
 	}
 
 	templateResponse := dtos.TemplateMessageResponse{
-		TemplateMessageID: createdTemplate.ID,
+		TemplateID: createdTemplate.ID,
 		Title:             createdTemplate.Title,
 		Content:           createdTemplate.Content,
 		CreatedAt:         createdTemplate.CreatedAt,
@@ -175,7 +175,7 @@ func (u *templateMessageUsecase) UpdateTemplateMessage(id uint, templateInput dt
 		return templateResponse, err
 	}
 
-	templateResponse.TemplateMessageID = template.ID
+	templateResponse.TemplateID = template.ID
 	templateResponse.Title = template.Title
 	templateResponse.Content = template.Content
 	templateResponse.CreatedAt = template.CreatedAt

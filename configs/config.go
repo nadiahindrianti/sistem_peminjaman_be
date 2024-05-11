@@ -99,5 +99,9 @@ func MigrateDB(db *gorm.DB) error {
 		&models.LabImage{},
 		&models.HistorySearch{},
 		&models.HistorySeenLab{},
+		&models.Jadwal{},
+		&models.Peminjaman{},
+		&models.BeritaAcaraImage{},
+		&models.SuratRekomendasiImage{},
 	)
 }

@@ -14,6 +14,7 @@ import (
 type UserUsecase interface {
 	UserLogin(input dtos.UserLoginInput) (dtos.UserInformationResponse, error)
 	UserRegister(input dtos.UserRegisterInput) (dtos.UserInformationResponse, error)
+	AdminRegister(input dtos.UserRegisterInput) (dtos.UserInformationResponse, error)
 	UserUpdatePassword(userId uint, input dtos.UserUpdatePasswordInput) (dtos.UserInformationResponse, error)
 	UserUpdateProfile(userId uint, input dtos.UserUpdateProfileInput) (dtos.UserInformationResponse, error)
 	UserCredential(userId uint) (dtos.UserInformationResponse, error)
@@ -71,7 +72,6 @@ func (u *userUsecase) UserLogin(input dtos.UserLoginInput) (dtos.UserInformation
 		return userResponse, err
 	}
 
-	
 
 	userResponse.ID = user.ID
 	userResponse.FullName = user.FullName
@@ -132,6 +132,56 @@ func (u *userUsecase) UserRegister(input dtos.UserRegisterInput) (dtos.UserInfor
 	user.NIMNIP = input.NIMNIP
 	user.ProfilePicture = "https://icon-library.com/images/default-user-icon/default-user-icon-13.jpg"
 	user.Role = "user"
+
+	user, err = u.userRepo.UserCreate(user)
+	if err != nil {
+		return userResponse, err
+	}
+
+	userResponse.ID = user.ID
+	userResponse.FullName = user.FullName
+	userResponse.Email = user.Email
+	userResponse.NIMNIP = user.NIMNIP
+	userResponse.ProfilePicture = user.ProfilePicture
+	userResponse.Role = &user.Role
+	userResponse.CreatedAt = user.CreatedAt
+	userResponse.UpdatedAt = user.UpdatedAt
+
+	return userResponse, err
+}
+
+func (u *userUsecase) AdminRegister(input dtos.UserRegisterInput) (dtos.UserInformationResponse, error) {
+	var (
+		user         models.User
+		userResponse dtos.UserInformationResponse
+	)
+
+	input.Email = strings.ToLower(input.Email)
+
+	user, err := u.userRepo.UserGetByEmail(input.Email)
+	if user.ID > 0 {
+		return userResponse, errors.New("Email already used")
+	}
+
+	if input.Password != input.ConfirmPassword {
+		return userResponse, errors.New("Password does not match")
+	}
+
+	password, err := helpers.HashPassword(input.Password)
+	if err != nil {
+		return userResponse, err
+	}
+
+	if input.Email == "" || input.FullName == "" || input.Password == "" || input.ConfirmPassword == "" || input.Role == "admin" || input.NIMNIP == "" {
+		return userResponse, errors.New("Failed to create user")
+	}
+
+	user.FullName = input.FullName
+	user.Email = input.Email
+	user.Password = password
+	user.NIMNIP = input.NIMNIP
+	user.ProfilePicture = "https://icon-library.com/images/default-user-icon/default-user-icon-13.jpg"
+	user.Role = "admin"
 
 	user, err = u.userRepo.UserCreate(user)
 	if err != nil {

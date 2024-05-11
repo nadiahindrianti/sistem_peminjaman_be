@@ -94,6 +94,42 @@ func (c *UserController) UserRegister(ctx echo.Context) error {
 	)
 }
 
+func (c *UserController) AdminRegister(ctx echo.Context) error {
+	var userInput dtos.UserRegisterInput
+	err := ctx.Bind(&userInput)
+	if err != nil {
+		return ctx.JSON(
+			http.StatusBadRequest,
+			helpers.NewErrorResponse(
+				http.StatusBadRequest,
+				"Failed to register",
+				helpers.GetErrorData(err),
+			),
+		)
+	}
+
+	user, err := c.userUsecase.AdminRegister(userInput)
+	if err != nil {
+		return ctx.JSON(
+			http.StatusBadRequest,
+			helpers.NewErrorResponse(
+				http.StatusBadRequest,
+				"Failed to register",
+				helpers.GetErrorData(err),
+			),
+		)
+	}
+
+	return ctx.JSON(
+		http.StatusCreated,
+		helpers.NewResponse(
+			http.StatusCreated,
+			"Successfully registered",
+			user,
+		),
+	)
+}
+
 func (c *UserController) UserUpdatePassword(ctx echo.Context) error {
 	tokenString := middlewares.GetTokenFromHeader(ctx.Request())
 	if tokenString == "" {

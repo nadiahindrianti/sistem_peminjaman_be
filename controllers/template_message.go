@@ -145,7 +145,7 @@ func (c *templateMessageController) UpdateTemplateMessage(ctx echo.Context) erro
 	id, _ := strconv.Atoi(ctx.Param("id"))
 
 	template, err := c.templateMessageUsecase.GetTemplateMessageByID(uint(id))
-	if template.TemplateMessageID == 0 {
+	if template.TemplateID == 0 {
 		return ctx.JSON(
 			http.StatusBadRequest,
 			helpers.NewErrorResponse(
