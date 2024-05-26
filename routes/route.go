@@ -145,5 +145,5 @@ func Init(e *echo.Echo, db *gorm.DB) {
 	public.GET("/peminjaman/:id", peminjamanController.GetPeminjamanByID)
 	admin.PUT("/peminjaman/:id", peminjamanController.UpdatePeminjaman)
 	user.POST("/peminjaman", peminjamanController.CreatePeminjaman)
-	admin.DELETE("/peminjaman/:id", peminjamanController.DeletePeminjaman)
+
 }

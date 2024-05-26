@@ -123,7 +123,7 @@ func (c *peminjamanController) GetPeminjamansByAdmin(ctx echo.Context) error {
 	statusParam := ctx.QueryParam("status")
 
 
-	peminjaman, count, err := c.peminjamanUsecase.GetPeminjamansByAdmin(pageParam, limitParam, searchParam, statusParam)
+	peminjaman, count, err := c.peminjamanUsecase.GetPeminjamansByAdmin(page, limit, searchParam, statusParam)
 	if err != nil {
 		return ctx.JSON(
 			http.StatusBadRequest,
@@ -257,7 +257,10 @@ func (c *peminjamanController) CreatePeminjaman(ctx echo.Context) error {
 	)
 }
 
+//error func
+
 func (c *peminjamanController) UpdatePeminjaman(ctx echo.Context) error {
+	// Ambil token dari header
 	tokenString := middlewares.GetTokenFromHeader(ctx.Request())
 	if tokenString == "" {
 		return ctx.JSON(
@@ -270,17 +273,8 @@ func (c *peminjamanController) UpdatePeminjaman(ctx echo.Context) error {
 		)
 	}
 
-	userId, err := middlewares.GetUserIdFromToken(tokenString)
-	if err != nil {
-		return ctx.JSON(
-			http.StatusUnauthorized,
-			helpers.NewErrorResponse(
-				http.StatusUnauthorized,
-				"No token provided",
-				helpers.GetErrorData(err),
-			),
-		)
-	}
+
+	// Binding input peminjaman
 	var peminjamanInput dtos.PeminjamanInput
 	if err := ctx.Bind(&peminjamanInput); err != nil {
 		return ctx.JSON(
@@ -293,9 +287,11 @@ func (c *peminjamanController) UpdatePeminjaman(ctx echo.Context) error {
 		)
 	}
 
+	// Ambil ID dari parameter URL
 	id, _ := strconv.Atoi(ctx.Param("id"))
 
-	peminjaman, err := c.peminjamanUsecase.GetPeminjamanByID(userId, uint(id))
+	// Dapatkan detail peminjaman berdasarkan ID
+	peminjaman, err := c.peminjamanUsecase.GetPeminjamansDetailByAdmin(uint(id))
 	if peminjaman.PeminjamanID == 0 {
 		return ctx.JSON(
 			http.StatusBadRequest,
@@ -307,18 +303,20 @@ func (c *peminjamanController) UpdatePeminjaman(ctx echo.Context) error {
 		)
 	}
 
-	peminjamanResp, err := c.peminjamanUsecase.UpdatePeminjaman(uint(id), userId, peminjamanInput)
+	// Perbarui peminjaman
+	peminjamanResp, err := c.peminjamanUsecase.UpdatePeminjaman(uint(id), peminjamanInput)
 	if err != nil {
 		return ctx.JSON(
 			http.StatusBadRequest,
 			helpers.NewErrorResponse(
 				http.StatusBadRequest,
-				"Failed to updated a jadwal",
+				"Failed to update peminjaman",
 				helpers.GetErrorData(err),
 			),
 		)
 	}
 
+	// Berhasil memperbarui peminjaman
 	return ctx.JSON(
 		http.StatusOK,
 		helpers.NewResponse(
@@ -329,37 +327,3 @@ func (c *peminjamanController) UpdatePeminjaman(ctx echo.Context) error {
 	)
 }
 
-func (c *peminjamanController) DeletePeminjaman(ctx echo.Context) error {
-	tokenString := middlewares.GetTokenFromHeader(ctx.Request())
-	if tokenString == "" {
-		return ctx.JSON(
-			http.StatusUnauthorized,
-			helpers.NewErrorResponse(
-				http.StatusUnauthorized,
-				"No token provided",
-				"Unauthorized",
-			),
-		)
-	}
-	id, _ := strconv.Atoi(ctx.Param("id"))
-
-	err := c.peminjamanUsecase.DeletePeminjaman(uint(id))
-	if err != nil {
-		return ctx.JSON(
-			http.StatusBadRequest,
-			helpers.NewErrorResponse(
-				http.StatusBadRequest,
-				"Failed to delete peminjaman",
-				helpers.GetErrorData(err),
-			),
-		)
-	}
-	return ctx.JSON(
-		http.StatusOK,
-		helpers.NewResponse(
-			http.StatusOK,
-			"Successfully deleted peminjaman",
-			nil,
-		),
-	)
-}

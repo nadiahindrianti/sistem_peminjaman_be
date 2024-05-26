@@ -1,6 +1,8 @@
 package repositories
 
 import (
+    "errors"
+
 	"sistem_peminjaman_be/models"
 
 	"gorm.io/gorm"
@@ -10,7 +12,7 @@ type PeminjamanRepository interface {
 	GetPeminjamans(page, limit int, userID uint, status string) ([]models.Peminjaman, int, error)
 	GetPeminjamanByStatusAndID(id, userID uint, status string) (models.Peminjaman, error)
 	GetPeminjamanByID(id, userID uint) (models.Peminjaman, error)
-	//GetPeminjamanID(peminjamanId string) (models.Peminjaman, error)
+	GetPeminjamanID(peminjamanId uint) (models.Peminjaman, error)
 	CreatePeminjaman(peminjaman models.Peminjaman) (models.Peminjaman, error)
 	UpdatePeminjaman(peminjaman models.Peminjaman) (models.Peminjaman, error)
 	DeletePeminjaman(id uint ) error
@@ -77,20 +79,31 @@ func (r *peminjamanRepository) GetPeminjamanByStatusAndID(id, userID uint, statu
 }
 
 func (r *peminjamanRepository) GetPeminjamanByID(id, userID uint) (models.Peminjaman, error) {
-	var peminjaman models.Peminjaman
-	if userID == 1 {
-		err := r.db.Where("id = ?", id).First(&peminjaman).Error
-		return peminjaman, err
-	}
-	err := r.db.Where("id = ? AND user_id = ?", id, userID).First(&peminjaman).Error
-	return peminjaman, err
+    var peminjaman models.Peminjaman
+    var err error
+    
+    // Jika userID adalah 0, maka cari berdasarkan ID saja
+    if userID == 0 {
+        err = r.db.Where("id = ?", id).First(&peminjaman).Error
+    } else {
+        err = r.db.Where("id = ? AND user_id = ?", id, userID).First(&peminjaman).Error
+    }
+
+    if err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            return peminjaman, errors.New("peminjaman not found")
+        }
+        return peminjaman, err
+    }
+
+    return peminjaman, nil
 }
 
-//func (r *peminjamanRepository) GetPeminjamanID(peminjamanId string) (models.Peminjaman, error) {
-//	var peminjaman models.Peminjaman
-//	err := r.db.Where("id = ?", peminjamanId).First(&peminjaman).Error
-//	return peminjaman, err
-//}
+func (r *peminjamanRepository) GetPeminjamanID(peminjamanId uint) (models.Peminjaman, error) {
+	var peminjaman models.Peminjaman
+	err := r.db.Where("id = ?", peminjamanId).First(&peminjaman).Error
+	return peminjaman, err
+}
 
 func (r *peminjamanRepository) CreatePeminjaman(peminjaman models.Peminjaman) (models.Peminjaman, error) {
 	err := r.db.Create(&peminjaman).Error
@@ -98,13 +111,12 @@ func (r *peminjamanRepository) CreatePeminjaman(peminjaman models.Peminjaman) (m
 }
 
 func (r *peminjamanRepository) UpdatePeminjaman(peminjaman models.Peminjaman) (models.Peminjaman, error) {
-	err := r.db.Save(peminjaman).Error
-	return peminjaman, err
+	err := r.db.Save(&peminjaman).Error
+	if err != nil {
+		return peminjaman, err
+	}
+	return peminjaman, nil
 }
 
-func (r *peminjamanRepository) DeletePeminjaman(id uint) error {
-	var peminjaman models.Peminjaman
-	err := r.db.Where("id = ?", id).Delete(&peminjaman).Error
-	return err
-}
+
 

@@ -65,6 +65,28 @@ func GetUserIdFromToken(tokenString string) (uint, error) {
 	return userId, nil
 }
 
+// Fungsi untuk mengambil peran dari token
+func GetRoleFromToken(tokenString string) (string, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("SECRET_JWT")), nil
+	})
+	if err != nil {
+		return "", err
+	}
+	if !token.Valid {
+		return "", errors.New("invalid token")
+	}
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return "", errors.New("invalid claims")
+	}
+	role, ok := claims["role"].(string)
+	if !ok {
+		return "", errors.New("role claim not found")
+	}
+	return role, nil
+}
+
 func JWTErrorHandler(err error, c echo.Context) error {
 	// Customize the JWT error response
 	customError := helpers.ErrorResponse{

@@ -16,7 +16,7 @@ type PeminjamanUsecase interface {
 	GetPeminjamansByAdmin(page, limit int, search, status string) ([]dtos.PeminjamanResponse, int, error)
 	GetPeminjamansDetailByAdmin(peminjamanId uint) (dtos.PeminjamanResponse, error)
 	CreatePeminjaman(userID uint, peminjaman *dtos.PeminjamanInput) (dtos.PeminjamanResponse, error)
-	UpdatePeminjaman(id uint, userID uint, peminjaman dtos.PeminjamanInput) (dtos.PeminjamanResponse, error)
+	UpdatePeminjaman(id uint, peminjaman dtos.PeminjamanInput) (dtos.PeminjamanResponse, error)
 	DeletePeminjaman(id uint) error
 }
 
@@ -102,69 +102,72 @@ func (u *peminjamanUsecase) GetPeminjamans(page, limit int, userID uint, nameLab
 }
 
 func (u *peminjamanUsecase) GetPeminjamanByID(userId, peminjamanId uint) (dtos.PeminjamanResponse, error) {
-	peminjamanResponses := dtos.PeminjamanResponse{}
+    peminjamanResponses := dtos.PeminjamanResponse{}
 
-	// Mendapatkan data peminjaman berdasarkan ID
-	peminjaman, err := u.peminjamanRepo.GetPeminjamanByID(userId, peminjamanId)
-	if err != nil {
-		return peminjamanResponses, err
-	}
+    // Mendapatkan data peminjaman berdasarkan ID
+    peminjaman, err := u.peminjamanRepo.GetPeminjamanByID(peminjamanId, userId)
+    if err != nil {
+        if strings.Contains(err.Error(), "not found") {
+            return peminjamanResponses, errors.New("peminjaman tidak ditemukan, pastikan ID benar")
+        }
+        return peminjamanResponses, errors.New("failed to get peminjaman by id")
+    }
 
-	// Mendapatkan data surat rekomendasi image berdasarkan ID peminjaman
-	suratRekomendasiImagee, err := u.suratRekomendasiImageRepo.GetAllSuratRekomendasiImageByID(peminjamanId)
-	if err != nil {
-		return peminjamanResponses, err
-	}
+    // Mendapatkan data surat rekomendasi image berdasarkan ID peminjaman
+    suratRekomendasiImagee, err := u.suratRekomendasiImageRepo.GetAllSuratRekomendasiImageByID(peminjamanId)
+    if err != nil {
+        return peminjamanResponses, errors.New("failed to get surat rekomendasi image")
+    }
 
-	var suratRekomendasiImageResponses []dtos.SuratRekomendasiImageResponse
-	for _, suratRekomendasiImageee := range suratRekomendasiImagee {
-		suratRekomendasiImageResponse := dtos.SuratRekomendasiImageResponse{
-			PeminjamanID:             suratRekomendasiImageee.PeminjamanID,
-			SuratRekomendasiImageUrl: suratRekomendasiImageee.SuratRekomendasiImageUrl,
-		}
-		suratRekomendasiImageResponses = append(suratRekomendasiImageResponses, suratRekomendasiImageResponse)
-	}
+    var suratRekomendasiImageResponses []dtos.SuratRekomendasiImageResponse
+    for _, suratRekomendasiImageee := range suratRekomendasiImagee {
+        suratRekomendasiImageResponse := dtos.SuratRekomendasiImageResponse{
+            PeminjamanID:             suratRekomendasiImageee.PeminjamanID,
+            SuratRekomendasiImageUrl: suratRekomendasiImageee.SuratRekomendasiImageUrl,
+        }
+        suratRekomendasiImageResponses = append(suratRekomendasiImageResponses, suratRekomendasiImageResponse)
+    }
 
-	// Mendapatkan data lab berdasarkan ID
-	getLab, err := u.labRepo.GetLabByID2(peminjaman.LabID)
-	if err != nil {
-		return peminjamanResponses, err
-	}
+    // Mendapatkan data lab berdasarkan ID
+    getLab, err := u.labRepo.GetLabByID2(peminjaman.LabID)
+    if err != nil {
+        return peminjamanResponses, errors.New("failed to get lab")
+    }
 
-	// Mendapatkan data lab image berdasarkan ID lab
-	getLabImage, err := u.labImageRepo.GetAllLabImageByID(peminjaman.LabID)
-	if err != nil {
-		return peminjamanResponses, err
-	}
+    // Mendapatkan data lab image berdasarkan ID lab
+    getLabImage, err := u.labImageRepo.GetAllLabImageByID(peminjaman.LabID)
+    if err != nil {
+        return peminjamanResponses, errors.New("failed to get lab image")
+    }
 
-	var labImageResponses []dtos.LabImageResponse
-	for _, labImage := range getLabImage {
-		labImageResponse := dtos.LabImageResponse{
-			LabID:    labImage.LabID,
-			ImageUrl: labImage.ImageUrl,
-		}
-		labImageResponses = append(labImageResponses, labImageResponse)
-	}
+    var labImageResponses []dtos.LabImageResponse
+    for _, labImage := range getLabImage {
+        labImageResponse := dtos.LabImageResponse{
+            LabID:    labImage.LabID,
+            ImageUrl: labImage.ImageUrl,
+        }
+        labImageResponses = append(labImageResponses, labImageResponse)
+    }
 
-	// Membuat respons peminjaman
-	peminjamanResponse := dtos.PeminjamanResponse{
-		PeminjamanID:          int(peminjaman.ID),
-		TanggalPeminjaman:     helpers.FormatDateToYMD(peminjaman.TanggalPeminjaman),
-		JamPeminjaman:         peminjaman.JamPeminjaman,
-		SuratRekomendasiImage: suratRekomendasiImageResponses,
-		Description:           peminjaman.Description,
-		Status:                peminjaman.Status,
-		Lab: dtos.LabByIDResponses{
-			LabID:       getLab.ID,
-			Name:        getLab.Name,
-			LabImage:    labImageResponses,
-			Description: getLab.Description,
-		},
-		CreatedAt: peminjaman.CreatedAt,
-		UpdatedAt: peminjaman.UpdatedAt,
-	}
+    // Membuat respons peminjaman
+    peminjamanResponse := dtos.PeminjamanResponse{
+        PeminjamanID:          int(peminjaman.ID),
+        TanggalPeminjaman:     helpers.FormatDateToYMD(peminjaman.TanggalPeminjaman),
+        JamPeminjaman:         peminjaman.JamPeminjaman,
+        SuratRekomendasiImage: suratRekomendasiImageResponses,
+        Description:           peminjaman.Description,
+        Status:                peminjaman.Status,
+        Lab: dtos.LabByIDResponses{
+            LabID:       getLab.ID,
+            Name:        getLab.Name,
+            LabImage:    labImageResponses,
+            Description: getLab.Description,
+        },
+        CreatedAt: peminjaman.CreatedAt,
+        UpdatedAt: peminjaman.UpdatedAt,
+    }
 
-	return peminjamanResponse, nil
+    return peminjamanResponse, nil
 }
 
 func (u *peminjamanUsecase) GetPeminjamansByAdmin(page, limit int, search, status string) ([]dtos.PeminjamanResponse, int, error) {
@@ -318,75 +321,71 @@ func (u *peminjamanUsecase) GetPeminjamansDetailByAdmin(peminjamanId uint) (dtos
 	return peminjamanResponse, nil
 }
 
-// error func
+
 func (u *peminjamanUsecase) CreatePeminjaman(userID uint, PeminjamanInput *dtos.PeminjamanInput) (dtos.PeminjamanResponse, error) {
 	var peminjamanResponse dtos.PeminjamanResponse
 
-	// Mendapatkan data lab berdasarkan ID yang diberikan di input
-	getUsers, err := u.userRepo.UserGetById(peminjamanResponse.User.ID)
+	// Mendapatkan data user berdasarkan ID yang diberikan di input
+	getUsers, err := u.userRepo.UserGetById(userID)  // Menggunakan userID yang benar
 	if err != nil {
-		return peminjamanResponse, err
+		return peminjamanResponse, errors.New("failed to get user")
 	}
 
 	// Mendapatkan data lab berdasarkan ID yang diberikan di input
-	getLabs, err := u.labRepo.GetLabByID(peminjamanResponse.Lab.LabID)
+	getLabs, err := u.labRepo.GetLabByID(uint(PeminjamanInput.LabID))
 	if err != nil {
-		return peminjamanResponse, err
+		return peminjamanResponse, errors.New("failed to get lab")
 	}
 
 	// Cek apakah tanggal peminjaman valid
-	if *peminjaman.TanggalPeminjaman < time.Now().Format("2006-01-02") {
-		return peminjamanResponse, errors.New("Tanggal Peminjaman invalid")
+	if PeminjamanInput.TanggalPeminjaman == nil || *PeminjamanInput.TanggalPeminjaman < time.Now().Format("2006-01-02") {
+		return peminjamanResponse, errors.New("tanggal peminjaman invalid")
 	}
 
-	// Mengambil tanggal sekarang
-	dateNow := time.Now()
-
 	// Parsing tanggal peminjaman
-	tanggalPeminjamanParse, err := time.Parse("2006-01-02", *peminjaman.TanggalPeminjaman)
+	tanggalPeminjamanParse, err := time.Parse("2006-01-02", *PeminjamanInput.TanggalPeminjaman)
 	if err != nil {
-		return peminjamanResponse, errors.New("Failed to parse Tanggal Peminjaman")
+		return peminjamanResponse, errors.New("failed to parse tanggal peminjaman")
 	}
 
 	// Membandingkan tanggal peminjaman dengan tanggal sekarang
-	if tanggalPeminjamanParse.Before(dateNow) {
-		return peminjamanResponse, errors.New("Tanggal Peminjaman harus setelah tanggal sekarang")
+	if tanggalPeminjamanParse.Before(time.Now()) {
+		return peminjamanResponse, errors.New("tanggal peminjaman harus setelah tanggal sekarang")
 	}
 
 	// Membuat struktur Peminjaman dari data input
 	createPeminjaman := models.Peminjaman{
 		UserID:            getUsers.ID,
-		LabID:             getLabs.ID,
+		LabID:             getLabs.ID,  // Menggunakan ID lab yang sudah didapatkan
 		TanggalPeminjaman: &tanggalPeminjamanParse,
-		JamPeminjaman:     peminjaman.JamPeminjaman,
-		Description:       peminjaman.Description,
+		JamPeminjaman:     PeminjamanInput.JamPeminjaman,
+		Description:       PeminjamanInput.Description,
 		Status:            "request",
 	}
 
 	// Menyimpan data peminjaman ke repository
 	createdPeminjaman, err := u.peminjamanRepo.CreatePeminjaman(createPeminjaman)
 	if err != nil {
-		return peminjamanResponse, err
+		return peminjamanResponse, errors.New("failed to create peminjaman")
 	}
 
 	// Memproses gambar surat peminjaman jika ada
-	for _, suratRekomendasiImage := range peminjaman.SuratRekomendasiImage {
+	for _, suratRekomendasiImage := range PeminjamanInput.SuratRekomendasiImage {
 		if suratRekomendasiImage.SuratRekomendasiImageUrl == "" {
-			return peminjamanResponse, errors.New("failed to create peminjaman: surat rekomendasi image URL is empty")
+			return peminjamanResponse, errors.New("surat rekomendasi image URL is empty")
 		}
 		peminjamanImage := models.SuratRekomendasiImage{
 			PeminjamanID:             createdPeminjaman.ID,
 			SuratRekomendasiImageUrl: suratRekomendasiImage.SuratRekomendasiImageUrl,
 		}
-		_, err := u.suratRekomendasiImageRepo.CreateSuratRekomendasiImage(peminjamanImage)
-		if err != nil {
-			return peminjamanResponse, err
+		if _, err := u.suratRekomendasiImageRepo.CreateSuratRekomendasiImage(peminjamanImage); err != nil {
+			return peminjamanResponse, errors.New("failed to create eurat rekomendasi image")
 		}
 	}
 
 	// Mengonversi data gambar surat rekomendasi ke DTO
 	var suratRekomendasiImageResponses []dtos.SuratRekomendasiImageResponse
-	for _, suratRekomendasiImage := range peminjaman.SuratRekomendasiImage {
+	for _, suratRekomendasiImage := range PeminjamanInput.SuratRekomendasiImage {
 		suratRekomendasiImageResponse := dtos.SuratRekomendasiImageResponse{
 			PeminjamanID:             createdPeminjaman.ID,
 			SuratRekomendasiImageUrl: suratRekomendasiImage.SuratRekomendasiImageUrl,
@@ -394,20 +393,16 @@ func (u *peminjamanUsecase) CreatePeminjaman(userID uint, PeminjamanInput *dtos.
 		suratRekomendasiImageResponses = append(suratRekomendasiImageResponses, suratRekomendasiImageResponse)
 	}
 
+	// Mendapatkan data peminjaman yang sudah dibuat
 	peminjaman, err := u.peminjamanRepo.GetPeminjamanByID(createdPeminjaman.ID, userID)
 	if err != nil {
-		return peminjamanResponse, err
-	}
-
-	getLab, err := u.labRepo.GetLabByID(peminjaman.LabID)
-	if err != nil {
-		return peminjamanResponse, err
+		return peminjamanResponse, errors.New("failed to get peminjaman")
 	}
 
 	// Mendapatkan data lab image berdasarkan ID lab
 	getLabImage, err := u.labImageRepo.GetAllLabImageByID(peminjaman.LabID)
 	if err != nil {
-		return peminjamanResponse, err
+		return peminjamanResponse, errors.New("failed to get lab image")
 	}
 
 	// Mengonversi data gambar lab image ke DTO
@@ -441,14 +436,16 @@ func (u *peminjamanUsecase) CreatePeminjaman(userID uint, PeminjamanInput *dtos.
 	return peminjamanResponse, nil
 }
 
-func (u *peminjamanUsecase) UpdatePeminjaman(id uint, userID uint, peminjaman dtos.PeminjamanInput) (dtos.PeminjamanResponse, error) {
+// error func
+func (u *peminjamanUsecase) UpdatePeminjaman(id uint, peminjaman dtos.PeminjamanInput) (dtos.PeminjamanResponse, error) {
 	var peminjamans models.Peminjaman
 	var peminjamanResponse dtos.PeminjamanResponse
 
-	peminjamans, err := u.peminjamanRepo.GetPeminjamanByID(id, userID)
+	peminjamans, err := u.peminjamanRepo.GetPeminjamanID(id)
 	if err != nil {
 		return peminjamanResponse, err
 	}
+
 
 	if peminjaman.JamPeminjaman == "" || peminjaman.Description == "" || peminjaman.SuratRekomendasiImage == nil || peminjaman.Status == "" {
 		return peminjamanResponse, errors.New("failed to update peminjaman")
@@ -545,6 +542,4 @@ func (u *peminjamanUsecase) UpdatePeminjaman(id uint, userID uint, peminjaman dt
 	return peminjamanResponse, nil
 }
 
-func (u *peminjamanUsecase) DeletePeminjaman(id uint) error {
-	return u.peminjamanRepo.DeletePeminjaman(id)
-}
+
