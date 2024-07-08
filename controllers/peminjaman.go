@@ -15,9 +15,11 @@ type PeminjamanController interface {
 	GetAllPeminjamans(c echo.Context) error
 	GetPeminjamanByID(c echo.Context) error
 	GetPeminjamansByAdmin(c echo.Context) error
+	AdminGetPeminjamanByID(c echo.Context) error
+	GetPeminjamansDetailByAdmin(c echo.Context) error
 	CreatePeminjaman(c echo.Context) error
+	AdminUpdatePeminjaman(c echo.Context) error
 	UpdatePeminjaman(c echo.Context) error
-	DeletePeminjaman(c echo.Context) error
 }
 
 type peminjamanController struct {
@@ -148,6 +150,58 @@ func (c *peminjamanController) GetPeminjamansByAdmin(ctx echo.Context) error {
 	)
 }
 
+func (c *peminjamanController) GetPeminjamansDetailByAdmin(ctx echo.Context) error {
+	id, _ := strconv.Atoi(ctx.Param("id"))
+	peminjaman, err := c.peminjamanUsecase.GetPeminjamansDetailByAdmin(uint(id))
+
+	if err != nil {
+		return ctx.JSON(
+			http.StatusBadRequest,
+			helpers.NewErrorResponse(
+				http.StatusBadRequest,
+				"Failed to get peminjaman by id",
+				helpers.GetErrorData(err),
+			),
+		)
+	}
+
+	return ctx.JSON(
+		http.StatusOK,
+		helpers.NewResponse(
+			http.StatusOK,
+			"Successfully to get peminjaman by id",
+			peminjaman,
+		),
+	)
+
+}
+
+func (c *peminjamanController) AdminGetPeminjamanByID(ctx echo.Context) error {
+	id, _ := strconv.Atoi(ctx.Param("id"))
+	peminjaman, err := c.peminjamanUsecase.AdminGetPeminjamanByID( uint(id))
+
+	if err != nil {
+		return ctx.JSON(
+			http.StatusBadRequest,
+			helpers.NewErrorResponse(
+				http.StatusBadRequest,
+				"Failed to get peminjaman by id",
+				helpers.GetErrorData(err),
+			),
+		)
+	}
+
+	return ctx.JSON(
+		http.StatusOK,
+		helpers.NewResponse(
+			http.StatusOK,
+			"Successfully to get peminjaman by id",
+			peminjaman,
+		),
+	)
+
+}
+
 func (c *peminjamanController) GetPeminjamanByID(ctx echo.Context) error {
 	tokenString := middlewares.GetTokenFromHeader(ctx.Request())
 	if tokenString == "" {
@@ -260,19 +314,6 @@ func (c *peminjamanController) CreatePeminjaman(ctx echo.Context) error {
 //error func
 
 func (c *peminjamanController) UpdatePeminjaman(ctx echo.Context) error {
-	// Ambil token dari header
-	tokenString := middlewares.GetTokenFromHeader(ctx.Request())
-	if tokenString == "" {
-		return ctx.JSON(
-			http.StatusUnauthorized,
-			helpers.NewErrorResponse(
-				http.StatusUnauthorized,
-				"No token provided",
-				"Unauthorized",
-			),
-		)
-	}
-
 
 	// Binding input peminjaman
 	var peminjamanInput dtos.PeminjamanInput
@@ -291,7 +332,7 @@ func (c *peminjamanController) UpdatePeminjaman(ctx echo.Context) error {
 	id, _ := strconv.Atoi(ctx.Param("id"))
 
 	// Dapatkan detail peminjaman berdasarkan ID
-	peminjaman, err := c.peminjamanUsecase.GetPeminjamansDetailByAdmin(uint(id))
+	peminjaman, err := c.peminjamanUsecase.AdminGetPeminjamanByID(uint(id))
 	if peminjaman.PeminjamanID == 0 {
 		return ctx.JSON(
 			http.StatusBadRequest,
@@ -305,6 +346,62 @@ func (c *peminjamanController) UpdatePeminjaman(ctx echo.Context) error {
 
 	// Perbarui peminjaman
 	peminjamanResp, err := c.peminjamanUsecase.UpdatePeminjaman(uint(id), peminjamanInput)
+	if err != nil {
+		return ctx.JSON(
+			http.StatusBadRequest,
+			helpers.NewErrorResponse(
+				http.StatusBadRequest,
+				"Failed to update peminjaman",
+				helpers.GetErrorData(err),
+			),
+		)
+	}
+
+	// Berhasil memperbarui peminjaman
+	return ctx.JSON(
+		http.StatusOK,
+		helpers.NewResponse(
+			http.StatusOK,
+			"Successfully updated peminjaman",
+			peminjamanResp,
+		),
+	)
+}
+
+
+func (c *peminjamanController) AdminUpdatePeminjaman(ctx echo.Context) error {
+
+	// Binding input peminjaman
+	var peminjamanInput dtos.PeminjamanInput
+	if err := ctx.Bind(&peminjamanInput); err != nil {
+		return ctx.JSON(
+			http.StatusBadRequest,
+			helpers.NewErrorResponse(
+				http.StatusBadRequest,
+				"Failed binding peminjaman",
+				helpers.GetErrorData(err),
+			),
+		)
+	}
+
+	// Ambil ID dari parameter URL
+	id, _ := strconv.Atoi(ctx.Param("id"))
+
+	// Dapatkan detail peminjaman berdasarkan ID
+	peminjaman, err := c.peminjamanUsecase.AdminGetPeminjamanByID(uint(id))
+	if peminjaman.PeminjamanID == 0 {
+		return ctx.JSON(
+			http.StatusBadRequest,
+			helpers.NewErrorResponse(
+				http.StatusBadRequest,
+				"Failed to get peminjaman by id",
+				helpers.GetErrorData(err),
+			),
+		)
+	}
+
+	// Perbarui peminjaman
+	peminjamanResp, err := c.peminjamanUsecase.AdminUpdatePeminjaman(uint(id), peminjamanInput)
 	if err != nil {
 		return ctx.JSON(
 			http.StatusBadRequest,

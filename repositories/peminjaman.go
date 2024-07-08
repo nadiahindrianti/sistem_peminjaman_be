@@ -12,10 +12,11 @@ type PeminjamanRepository interface {
 	GetPeminjamans(page, limit int, userID uint, status string) ([]models.Peminjaman, int, error)
 	GetPeminjamanByStatusAndID(id, userID uint, status string) (models.Peminjaman, error)
 	GetPeminjamanByID(id, userID uint) (models.Peminjaman, error)
+	GetPeminjamanID2(id, userID uint) (models.Peminjaman, error)
+	
 	GetPeminjamanID(peminjamanId uint) (models.Peminjaman, error)
 	CreatePeminjaman(peminjaman models.Peminjaman) (models.Peminjaman, error)
 	UpdatePeminjaman(peminjaman models.Peminjaman) (models.Peminjaman, error)
-	DeletePeminjaman(id uint ) error
 }
 
 type peminjamanRepository struct {
@@ -102,6 +103,16 @@ func (r *peminjamanRepository) GetPeminjamanByID(id, userID uint) (models.Peminj
 func (r *peminjamanRepository) GetPeminjamanID(peminjamanId uint) (models.Peminjaman, error) {
 	var peminjaman models.Peminjaman
 	err := r.db.Where("id = ?", peminjamanId).First(&peminjaman).Error
+	return peminjaman, err
+}
+
+func (r *peminjamanRepository) GetPeminjamanID2(id, userID uint) (models.Peminjaman, error) {
+	var peminjaman models.Peminjaman
+	if userID == 1 {
+		err := r.db.Where("id = ?", id).First(&peminjaman).Error
+		return peminjaman, err
+	}
+	err := r.db.Where("id = ? AND user_id = ?", id, userID).First(&peminjaman).Error
 	return peminjaman, err
 }
 

@@ -103,5 +103,6 @@ func MigrateDB(db *gorm.DB) error {
 		&models.Peminjaman{},
 		&models.BeritaAcaraImage{},
 		&models.SuratRekomendasiImage{},
+		&models.ExamUser{},
 	)
 }

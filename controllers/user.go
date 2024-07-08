@@ -94,6 +94,42 @@ func (c *UserController) UserRegister(ctx echo.Context) error {
 	)
 }
 
+func (c *UserController) ExamUserRegister(ctx echo.Context) error {
+	var examuserInput dtos.ExamUserRegisterInput
+	err := ctx.Bind(&examuserInput)
+	if err != nil {
+		return ctx.JSON(
+			http.StatusBadRequest,
+			helpers.NewErrorResponse(
+				http.StatusBadRequest,
+				"Failed to register",
+				helpers.GetErrorData(err),
+			),
+		)
+	}
+
+	examuser, err := c.userUsecase.ExamUserRegister(examuserInput)
+	if err != nil {
+		return ctx.JSON(
+			http.StatusBadRequest,
+			helpers.NewErrorResponse(
+				http.StatusBadRequest,
+				"Failed to register",
+				helpers.GetErrorData(err),
+			),
+		)
+	}
+
+	return ctx.JSON(
+		http.StatusCreated,
+		helpers.NewResponse(
+			http.StatusCreated,
+			"Successfully registered",
+			examuser,
+		),
+	)
+}
+
 func (c *UserController) AdminRegister(ctx echo.Context) error {
 	var userInput dtos.UserRegisterInput
 	err := ctx.Bind(&userInput)
@@ -673,6 +709,30 @@ func (c *UserController) UserAdminUpdate(ctx echo.Context) error {
 			http.StatusCreated,
 			"Successfully updated user",
 			user,
+		),
+	)
+}
+
+func (c *UserController) DeleteUser(ctx echo.Context) error {
+	id, _ := strconv.Atoi(ctx.Param("id"))
+
+	err := c.userUsecase.DeleteUser(uint(id))
+	if err != nil {
+		return ctx.JSON(
+			http.StatusBadRequest,
+			helpers.NewErrorResponse(
+				http.StatusBadRequest,
+				"Failed to delete user",
+				helpers.GetErrorData(err),
+			),
+		)
+	}
+	return ctx.JSON(
+		http.StatusOK,
+		helpers.NewResponse(
+			http.StatusOK,
+			"Successfully deleted user",
+			nil,
 		),
 	)
 }

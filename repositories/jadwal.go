@@ -10,6 +10,7 @@ type JadwalRepository interface {
 	GetAllJadwals(page, limit int) ([]models.Jadwal, int, error)
 	GetJadwalByID(id uint) (models.Jadwal, error)
 	GetJadwalByID2(id uint) (models.Jadwal, error)
+	GetJadwalByID3(id uint, userID uint) (models.Jadwal, error)
 	CreateJadwal(Lab models.Jadwal) (models.Jadwal, error)
 	UpdateJadwal(Lab models.Jadwal) (models.Jadwal, error)
 	DeleteJadwal(id uint) error
@@ -52,6 +53,16 @@ func (r *jadwalRepository) GetJadwalByID(id uint) (models.Jadwal, error) {
 func (r *jadwalRepository) GetJadwalByID2(id uint) (models.Jadwal, error) {
 	var jadwal models.Jadwal
 	err := r.db.Unscoped().Where("id = ?", id).First(&jadwal).Error
+	return jadwal, err
+}
+
+func (r *jadwalRepository) GetJadwalByID3(id uint, userID uint) (models.Jadwal, error) {
+	var jadwal models.Jadwal
+	if userID == 1 {
+		err := r.db.Where("id = ?", id).First(&jadwal).Error
+		return jadwal, err
+	}
+	err := r.db.Where("id = ? AND user_id = ?", id, userID).First(&jadwal).Error
 	return jadwal, err
 }
 

@@ -13,12 +13,15 @@ type UserRepository interface {
 	UserGetById(id uint) (models.User, error)
 	UserGetById2(id uint) (models.User, error)
 	UserGetByEmail(email string) (models.User, error)
+	ExamUserGetByEmail(email string) (models.ExamUser, error)
 	UserGetByEmail2(id uint, email string) (models.User, error)
 	UserGetByEmail3(email string) (models.User, error)
 	UserCreate(user models.User) (models.User, error)
+	ExamUserCreate(user models.ExamUser) (models.ExamUser, error)
 	UserCreate2(user models.User, isActive bool) (models.User, error)
 	UserUpdate(user models.User) (models.User, error)
 	UserUpdate2(user models.User, isActive bool) (models.User, error)
+	DeleteUser(id uint) error
 }
 
 type userRepository struct {
@@ -72,6 +75,12 @@ func (r *userRepository) UserGetByEmail(email string) (models.User, error) {
 	return user, err
 }
 
+func (r *userRepository) ExamUserGetByEmail(email string) (models.ExamUser, error) {
+	var user models.ExamUser
+	err := r.db.Where("email = ?", email).First(&user).Error
+	return user, err
+}
+
 func (r *userRepository) UserGetByEmail3(email string) (models.User, error) {
 	var user models.User
 	err := r.db.Unscoped().Where("email = ?", email).First(&user).Error
@@ -85,6 +94,11 @@ func (r *userRepository) UserGetByEmail2(id uint, email string) (models.User, er
 }
 
 func (r *userRepository) UserCreate(user models.User) (models.User, error) {
+	err := r.db.Create(&user).Error
+	return user, err
+}
+
+func (r *userRepository) ExamUserCreate(user models.ExamUser) (models.ExamUser, error) {
 	err := r.db.Create(&user).Error
 	return user, err
 }
@@ -112,4 +126,10 @@ func (r *userRepository) UserUpdate2(user models.User, isActive bool) (models.Us
 		err = r.db.Save(user).Error
 	}
 	return user, err
+}
+
+func (r *userRepository) DeleteUser(id uint) error {
+	var user models.User
+	err := r.db.Where("id = ?", id).Delete(&user).Error
+	return err
 }

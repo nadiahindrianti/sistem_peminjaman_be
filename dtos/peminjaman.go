@@ -11,6 +11,10 @@ type PeminjamanInput struct {
 	Status                 	    string    					   	    `form:"status" json:"status" example:"request"`
 }
 
+type StatusResponse struct {
+	Status                 	    string    					   	    `form:"status" json:"status" example:"request"`
+}
+
 type PeminjamanResponse struct {
 	PeminjamanID     			int                       			`json:"peminjaman_id" example:"1"`
 	TanggalPeminjaman  			string 					   			`form:"tanggal_peminjaman" json:"tanggal_peminjaman,omitempty" example:"2002-09-12"`

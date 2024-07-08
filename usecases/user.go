@@ -14,6 +14,7 @@ import (
 type UserUsecase interface {
 	UserLogin(input dtos.UserLoginInput) (dtos.UserInformationResponse, error)
 	UserRegister(input dtos.UserRegisterInput) (dtos.UserInformationResponse, error)
+	ExamUserRegister(input dtos.ExamUserRegisterInput) (dtos.ExamUserInformationResponse, error)
 	AdminRegister(input dtos.UserRegisterInput) (dtos.UserInformationResponse, error)
 	UserUpdatePassword(userId uint, input dtos.UserUpdatePasswordInput) (dtos.UserInformationResponse, error)
 	UserUpdateProfile(userId uint, input dtos.UserUpdateProfileInput) (dtos.UserInformationResponse, error)
@@ -24,6 +25,7 @@ type UserUsecase interface {
 	UserGetDetail(id int, isDeleted bool) (dtos.UserInformationResponse, error)
 	UserAdminRegister(input dtos.UserRegisterInput) (dtos.UserInformationResponse, error)
 	UserAdminUpdate(id uint, input dtos.UserRegisterInputUpdateByAdmin) (dtos.UserInformationResponse, error)
+	DeleteUser(id uint) error
 }
 
 type userUsecase struct {
@@ -77,6 +79,7 @@ func (u *userUsecase) UserLogin(input dtos.UserLoginInput) (dtos.UserInformation
 	userResponse.FullName = user.FullName
 	userResponse.Email = user.Email
 	userResponse.NIMNIP = user.NIMNIP
+	userResponse.KartuIdentitas = user.KartuIdentitas
 	userResponse.ProfilePicture = user.ProfilePicture
 	userResponse.Role = &user.Role
 	userResponse.Token = &accessToken
@@ -122,7 +125,59 @@ func (u *userUsecase) UserRegister(input dtos.UserRegisterInput) (dtos.UserInfor
 		return userResponse, err
 	}
 
-	if input.Email == "" || input.FullName == "" || input.Password == "" || input.ConfirmPassword == "" || input.Role == "admin" || input.NIMNIP == "" {
+	if input.Email == "" || input.FullName == "" || input.Password == "" || input.KartuIdentitas == "" ||input.Role == "admin" || input.NIMNIP == "" {
+		return userResponse, errors.New("Failed to create user")
+	}
+
+	user.FullName = input.FullName
+	user.Email = input.Email
+	user.Password = password
+	user.NIMNIP = input.NIMNIP
+	user.KartuIdentitas = input.KartuIdentitas
+	user.ProfilePicture = "https://icon-library.com/images/default-user-icon/default-user-icon-13.jpg"
+	user.Role = "user"
+
+	user, err = u.userRepo.UserCreate(user)
+	if err != nil {
+		return userResponse, err
+	}
+
+	userResponse.ID = user.ID
+	userResponse.FullName = user.FullName
+	userResponse.Email = user.Email
+	userResponse.NIMNIP = user.NIMNIP
+	userResponse.KartuIdentitas = user.KartuIdentitas
+	userResponse.ProfilePicture = user.ProfilePicture
+	userResponse.Role = &user.Role
+	userResponse.CreatedAt = user.CreatedAt
+	userResponse.UpdatedAt = user.UpdatedAt
+
+	return userResponse, err
+}
+
+func (u *userUsecase) ExamUserRegister(input dtos.ExamUserRegisterInput) (dtos.ExamUserInformationResponse, error) {
+	var (
+		user         models.ExamUser
+		userResponse dtos.ExamUserInformationResponse
+	)
+
+	input.Email = strings.ToLower(input.Email)
+
+	user, err := u.userRepo.ExamUserGetByEmail(input.Email)
+	if user.ID > 0 {
+		return userResponse, errors.New("Email already used")
+	}
+
+	if input.Password != input.ConfirmPassword {
+		return userResponse, errors.New("Password does not match")
+	}
+
+	password, err := helpers.HashPassword(input.Password)
+	if err != nil {
+		return userResponse, err
+	}
+
+	if input.Email == "" || input.FullName == "" || input.Password == "" ||input.Role == "admin" || input.NIMNIP == "" {
 		return userResponse, errors.New("Failed to create user")
 	}
 
@@ -133,7 +188,7 @@ func (u *userUsecase) UserRegister(input dtos.UserRegisterInput) (dtos.UserInfor
 	user.ProfilePicture = "https://icon-library.com/images/default-user-icon/default-user-icon-13.jpg"
 	user.Role = "user"
 
-	user, err = u.userRepo.UserCreate(user)
+	user, err = u.userRepo.ExamUserCreate(user)
 	if err != nil {
 		return userResponse, err
 	}
@@ -172,7 +227,7 @@ func (u *userUsecase) AdminRegister(input dtos.UserRegisterInput) (dtos.UserInfo
 		return userResponse, err
 	}
 
-	if input.Email == "" || input.FullName == "" || input.Password == "" || input.ConfirmPassword == "" || input.Role == "admin" || input.NIMNIP == "" {
+	if input.Email == "" || input.FullName == "" || input.Password == "" || input.KartuIdentitas == "" || input.Role == "admin" || input.NIMNIP == "" {
 		return userResponse, errors.New("Failed to create user")
 	}
 
@@ -180,6 +235,7 @@ func (u *userUsecase) AdminRegister(input dtos.UserRegisterInput) (dtos.UserInfo
 	user.Email = input.Email
 	user.Password = password
 	user.NIMNIP = input.NIMNIP
+	user.KartuIdentitas = input.KartuIdentitas
 	user.ProfilePicture = "https://icon-library.com/images/default-user-icon/default-user-icon-13.jpg"
 	user.Role = "admin"
 
@@ -192,6 +248,7 @@ func (u *userUsecase) AdminRegister(input dtos.UserRegisterInput) (dtos.UserInfo
 	userResponse.FullName = user.FullName
 	userResponse.Email = user.Email
 	userResponse.NIMNIP = user.NIMNIP
+	userResponse.KartuIdentitas = user.KartuIdentitas
 	userResponse.ProfilePicture = user.ProfilePicture
 	userResponse.Role = &user.Role
 	userResponse.CreatedAt = user.CreatedAt
@@ -259,6 +316,7 @@ func (u *userUsecase) UserUpdatePassword(userId uint, input dtos.UserUpdatePassw
 	userResponse.FullName = user.FullName
 	userResponse.Email = user.Email
 	userResponse.NIMNIP = user.NIMNIP
+	userResponse.KartuIdentitas = user.KartuIdentitas
 	userResponse.ProfilePicture = user.ProfilePicture
 	userResponse.Role = &user.Role
 	userResponse.CreatedAt = user.CreatedAt
@@ -307,6 +365,7 @@ func (u *userUsecase) UserUpdateProfile(userId uint, input dtos.UserUpdateProfil
 	userResponse.FullName = user.FullName
 	userResponse.Email = user.Email
 	userResponse.NIMNIP = user.NIMNIP
+	userResponse.KartuIdentitas = user.KartuIdentitas
 	userResponse.ProfilePicture = user.ProfilePicture
 	userResponse.Role = &user.Role
 	userResponse.CreatedAt = user.CreatedAt
@@ -344,6 +403,7 @@ func (u *userUsecase) UserCredential(userId uint) (dtos.UserInformationResponse,
 	userResponse.FullName = user.FullName
 	userResponse.Email = user.Email
 	userResponse.NIMNIP = user.NIMNIP
+	userResponse.KartuIdentitas = user.KartuIdentitas
 	userResponse.ProfilePicture = user.ProfilePicture
 	userResponse.Role = &user.Role
 	userResponse.CreatedAt = user.CreatedAt
@@ -389,6 +449,7 @@ func (u *userUsecase) UserUpdatePhotoProfile(userId uint, input dtos.UserUpdateP
 	userResponse.FullName = user.FullName
 	userResponse.Email = user.Email
 	userResponse.NIMNIP = user.NIMNIP
+	userResponse.KartuIdentitas = user.KartuIdentitas
 	userResponse.ProfilePicture = user.ProfilePicture
 	userResponse.Role = &user.Role
 	userResponse.CreatedAt = user.CreatedAt
@@ -433,6 +494,7 @@ func (u *userUsecase) UserDeletePhotoProfile(userId uint) (dtos.UserInformationR
 	userResponse.FullName = user.FullName
 	userResponse.Email = user.Email
 	userResponse.NIMNIP = user.NIMNIP
+	userResponse.KartuIdentitas = user.KartuIdentitas
 	userResponse.ProfilePicture = user.ProfilePicture
 	userResponse.Role = &user.Role
 	userResponse.CreatedAt = user.CreatedAt
@@ -486,6 +548,7 @@ func (u *userUsecase) UserGetAll(page, limit int, search, sortBy, filter string)
 			FullName:       strings.ToUpper(user.FullName),
 			Email:          user.Email,
 			NIMNIP:         user.NIMNIP,
+			KartuIdentitas: user.KartuIdentitas,
 			ProfilePicture: user.ProfilePicture,
 			CreatedAt:      user.CreatedAt,
 			UpdatedAt:      user.UpdatedAt,
@@ -544,6 +607,7 @@ func (u *userUsecase) UserGetDetail(id int, isDeleted bool) (dtos.UserInformatio
 		FullName:       user.FullName,
 		Email:          user.Email,
 		NIMNIP:         user.NIMNIP,
+		KartuIdentitas: user.KartuIdentitas,
 		ProfilePicture: user.ProfilePicture,
 		CreatedAt:      user.CreatedAt,
 		UpdatedAt:      user.UpdatedAt,
@@ -589,7 +653,7 @@ func (u *userUsecase) UserAdminRegister(input dtos.UserRegisterInput) (dtos.User
 		return userResponse, err
 	}
 
-	if input.Email == "" || input.FullName == "" || input.Password == "" || input.ConfirmPassword == "" || input.Role == "admin" || input.NIMNIP == "" {
+	if input.Email == "" || input.FullName == "" || input.Password == "" || input.ConfirmPassword == "" || input.KartuIdentitas == "" || input.Role == "admin" || input.NIMNIP == "" {
 		return userResponse, errors.New("Failed to create user")
 	}
 
@@ -597,6 +661,7 @@ func (u *userUsecase) UserAdminRegister(input dtos.UserRegisterInput) (dtos.User
 	user.Email = input.Email
 	user.Password = password
 	user.NIMNIP = input.NIMNIP
+	user.KartuIdentitas = input.KartuIdentitas
 	user.ProfilePicture = "https://icon-library.com/images/default-user-icon/default-user-icon-13.jpg"
 	user.Role = "user"
 
@@ -615,6 +680,7 @@ func (u *userUsecase) UserAdminRegister(input dtos.UserRegisterInput) (dtos.User
 	userResponse.FullName = user.FullName
 	userResponse.Email = user.Email
 	userResponse.NIMNIP = user.NIMNIP
+	userResponse.KartuIdentitas = user.KartuIdentitas
 	userResponse.ProfilePicture = user.ProfilePicture
 	userResponse.Role = &user.Role
 	userResponse.CreatedAt = user.CreatedAt
@@ -687,6 +753,7 @@ func (u *userUsecase) UserAdminUpdate(id uint, input dtos.UserRegisterInputUpdat
 	userResponse.FullName = user.FullName
 	userResponse.Email = user.Email
 	userResponse.NIMNIP = user.NIMNIP
+	userResponse.KartuIdentitas = user.KartuIdentitas
 	userResponse.ProfilePicture = user.ProfilePicture
 	userResponse.Role = &user.Role
 	userResponse.CreatedAt = user.CreatedAt
@@ -700,4 +767,8 @@ func (u *userUsecase) UserAdminUpdate(id uint, input dtos.UserRegisterInputUpdat
 	userResponse.DeletedAt = &deletedUser
 
 	return userResponse, err
+}
+
+func (u *userUsecase) DeleteUser(id uint) error {
+	return u.userRepo.DeleteUser(id)
 }

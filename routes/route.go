@@ -36,11 +36,10 @@ func Init(e *echo.Echo, db *gorm.DB) {
 	historySeenLabRepository := repositories.NewHistorySeenLabRepository(db)
 	suratRekomendasiImageRepository := repositories.NewSuratRekomendasiImageRepository(db)
 	peminjamanRepository := repositories.NewPeminjamanRepository(db)
+	dashboardRepository := repositories.NewDashboardRepository(db)
 
 	templateMessageUsecase := usecases.NewTemplateMessageUsecase(templateMessageRepository)
 	templateMessageController := controllers.NewTemplateMessageController(templateMessageUsecase)
-
-	
 
 	userUsecase := usecases.NewUserUsecase(userRepository, notificationRepository)
 	userController := controllers.NewUserController(userUsecase)
@@ -51,14 +50,12 @@ func Init(e *echo.Echo, db *gorm.DB) {
 	notificationUsecase := usecases.NewNotificationUsecase(notificationRepository, templateMessageRepository, userRepository)
 	notificationController := controllers.NewNotificationController(notificationUsecase)
 
-	
 	historySearchUsecase := usecases.NewHistorySearchUsecase(historySearchRepository, userRepository)
 	historySearchController := controllers.NewHistorySearchController(historySearchUsecase)
 
 	historySeenLabUsecase := usecases.NewHistorySeenLabUsecase(historySeenLabRepository, labRepository, labImageRepository)
 	historySeenLabController := controllers.NewHistorySeenLabController(historySeenLabUsecase)
 
-	
 	labUsecase := usecases.NewLabUsecase(labRepository, labImageRepository, historySearchRepository, userRepository, historySeenLabUsecase)
 	labController := controllers.NewLabController(labUsecase)
 
@@ -67,6 +64,9 @@ func Init(e *echo.Echo, db *gorm.DB) {
 
 	peminjamanUsecase := usecases.NewPeminjamanUsecase(peminjamanRepository, suratRekomendasiImageRepository, labRepository, labImageRepository, userRepository)
 	peminjamanController := controllers.NewPeminjamanController(peminjamanUsecase)
+
+	dashboardUsecase := usecases.NewDashboardUsecase(dashboardRepository, userRepository, peminjamanRepository, jadwalRepository, labRepository)
+	dashboardController := controllers.NewDashboardController(dashboardUsecase)
 
 	// Middleware CORS
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
@@ -79,11 +79,12 @@ func Init(e *echo.Echo, db *gorm.DB) {
 
 	// cloudinary
 	public.POST("/cloudinary/file-upload", cloudinaryController.FileUpload)
-	public.POST("/cloudinary/url-upload", cloudinaryController.UrlUpload)
+	//public.POST("/cloudinary/url-upload", cloudinaryController.UrlUpload)
 
 	// USER
 	api.POST("/login", userController.UserLogin)
 	api.POST("/register", userController.UserRegister)
+	api.POST("/register/exam", userController.ExamUserRegister)
 	api.POST("/register/admin", userController.AdminRegister)
 
 	user := api.Group("/user")
@@ -121,6 +122,9 @@ func Init(e *echo.Echo, db *gorm.DB) {
 	admin.GET("/user/detail", userController.UserGetDetail)
 	admin.POST("/user/register", userController.UserAdminRegister)
 	admin.PUT("/user/update/:id", userController.UserAdminUpdate)
+	public.DELETE("/user/:id", userController.DeleteUser)
+
+	admin.GET("/dashboard", dashboardController.DashboardGetAll)
 
 	public.GET("/template-message", templateMessageController.GetAllTemplateMessages)
 	public.GET("/template-message/:id", templateMessageController.GetTemplateMessageByID)
@@ -143,6 +147,8 @@ func Init(e *echo.Echo, db *gorm.DB) {
 	user.GET("/peminjaman/:id", peminjamanController.GetPeminjamanByID)
 	admin.GET("/peminjaman", peminjamanController.GetPeminjamansByAdmin)
 	public.GET("/peminjaman/:id", peminjamanController.GetPeminjamanByID)
+	public.GET("/admin/peminjaman/:id", peminjamanController.AdminGetPeminjamanByID)
+	//admin.PUT("/peminjaman/admin/:id", peminjamanController.AdminUpdatePeminjaman)
 	admin.PUT("/peminjaman/:id", peminjamanController.UpdatePeminjaman)
 	user.POST("/peminjaman", peminjamanController.CreatePeminjaman)
 
