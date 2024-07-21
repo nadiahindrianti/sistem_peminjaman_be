@@ -129,7 +129,6 @@ func (r *userRepository) UserUpdate2(user models.User, isActive bool) (models.Us
 }
 
 func (r *userRepository) DeleteUser(id uint) error {
-	var user models.User
-	err := r.db.Where("id = ?", id).Delete(&user).Error
-	return err
+	return r.db.Delete(&models.User{}, id).Error
 }
+

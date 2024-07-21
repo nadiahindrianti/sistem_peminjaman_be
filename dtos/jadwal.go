@@ -12,8 +12,12 @@ type JadwalInput struct {
 	Status                  string    					   `form:"status" json:"status" example:"notused"`
 }
 
+type StatusJadwalResponse struct {
+	Status                 	    string    					   	    `form:"status" json:"status" example:"request"`
+}
+
 type JadwalResponse struct {
-	JadwalID           		uint                      	   `form:"jadwal_id" json:"jadwal_id"`
+	JadwalID           		int                      	   `form:"jadwal_id" json:"jadwal_id"`
 	TanggalJadwal           string 					   	   `form:"tanggal_jadwal" json:"tanggal_jadwal,omitempty" example:"2002-09-12"`
 	WaktuJadwal             string    					   `form:"waktu_jadwal" json:"waktu_jadwal" example:"09:00"`
 	NameUser                string    					   `form:"name_user" json:"name_user"`

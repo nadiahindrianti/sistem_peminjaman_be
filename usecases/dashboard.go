@@ -10,6 +10,7 @@ import (
 
 type DashboardUsecase interface {
 	DashboardGetAll() (dtos.DashboardResponse, error)
+	DashboardGetByMonth(month, year int) (dtos.DashboardfilterResponse, error)
 }
 
 type dashboardUsecase struct {
@@ -27,7 +28,7 @@ func NewDashboardUsecase(dashboardRepository repositories.DashboardRepository, u
 
 func (u *dashboardUsecase) DashboardGetAll() (dtos.DashboardResponse, error) {
 	var dashboardResponse dtos.DashboardResponse
-	countUser, countUserToday, countLab,  countPeminjaman, countPeminjamanToday, newPeminjaman, newUser, newJadwal, countJadwal, countJadwalToday, err := u.dashboardRepository.DashboardGetAll()
+	countUser, countUserToday, countLab,  countPeminjaman, countPeminjamanToday, newPeminjaman, newUser, newJadwal, countJadwal, countJadwalToday, userTeraktif, err := u.dashboardRepository.DashboardGetAll()
 	if err != nil {
 		return dashboardResponse, err
 	}
@@ -124,6 +125,15 @@ func (u *dashboardUsecase) DashboardGetAll() (dtos.DashboardResponse, error) {
 		limitedJadwalResponses = newJadwalResponses
 	}
 
+	var userTeraktifResponses []dtos.UserTeraktifMeminjam
+	for _, user := range userTeraktif {
+		userTeraktifResponse := dtos.UserTeraktifMeminjam{
+			FullName:         user.FullName,
+			JumlahPeminjaman: user.JumlahPeminjaman,
+		}
+		userTeraktifResponses = append(userTeraktifResponses, userTeraktifResponse)
+	}
+
 	dashboardResponse = dtos.DashboardResponse{
 		CountUser: echo.Map{
 			"total_user":       countUser,
@@ -144,8 +154,42 @@ func (u *dashboardUsecase) DashboardGetAll() (dtos.DashboardResponse, error) {
 		},
 
 		NewPeminjaman: limitedPeminjamanResponses,
-		NewJadwal: limitedJadwalResponses,
-		NewUser:  newUserResponses,
+		NewJadwal:           limitedJadwalResponses,
+		NewUser:             newUserResponses,
+		UserTeraktifMeminjam: userTeraktifResponses,
 	}
+	return dashboardResponse, nil
+}
+
+
+
+func (u *dashboardUsecase) DashboardGetByMonth(month, year int) (dtos.DashboardfilterResponse, error) {
+	var dashboardResponse dtos.DashboardfilterResponse
+	countUser, countLab, countPeminjaman, countJadwal, countPeminjamanLabElektronika, countPeminjamanLabTransmisi, countPeminjamanLabJaringan, countJadwalLabElektronika, countJadwalLabTransmisi, countJadwalLabJaringan, err := u.dashboardRepository.DashboardGetByMonth(month, year)
+	if err != nil {
+		return dashboardResponse, err
+	}
+
+	dashboardResponse = dtos.DashboardfilterResponse{
+		CountUser: echo.Map{
+			"total_user": countUser,
+		},
+		CountLab: echo.Map{
+			"total_lab": countLab,
+		},
+		CountPeminjaman: echo.Map{
+			"total_peminjaman":               countPeminjaman,
+			"total_peminjaman_lab_elektronika": countPeminjamanLabElektronika,
+			"total_peminjaman_lab_transmisi":   countPeminjamanLabTransmisi,
+			"total_peminjaman_lab_jaringan":    countPeminjamanLabJaringan,
+		},
+		CountJadwal: echo.Map{
+			"total_jadwal":               countJadwal,
+			"total_jadwal_lab_elektronika": countJadwalLabElektronika,
+			"total_jadwal_lab_transmisi":   countJadwalLabTransmisi,
+			"total_jadwal_lab_jaringan":    countJadwalLabJaringan,
+		},
+	}
+
 	return dashboardResponse, nil
 }

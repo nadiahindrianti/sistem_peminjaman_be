@@ -104,6 +104,9 @@ func Init(e *echo.Echo, db *gorm.DB) {
 
 	// user jadwal
 	user.GET("/jadwal/search", jadwalController.SearchJadwalAvailable)
+	user.POST("/jadwal", jadwalController.CreateJadwal)
+	public.GET("/user/jadwal/:id", jadwalController.AdminGetJadwalByID)
+	user.PUT("/jadwal/:id", jadwalController.UpdateJadwalbyAdmin)
 
 	//user search
 	user.GET("/history-search", historySearchController.HistorySearchGetAll)
@@ -122,9 +125,10 @@ func Init(e *echo.Echo, db *gorm.DB) {
 	admin.GET("/user/detail", userController.UserGetDetail)
 	admin.POST("/user/register", userController.UserAdminRegister)
 	admin.PUT("/user/update/:id", userController.UserAdminUpdate)
-	public.DELETE("/user/:id", userController.DeleteUser)
+	admin.DELETE("/user/:id", userController.DeleteUser)
 
 	admin.GET("/dashboard", dashboardController.DashboardGetAll)
+	admin.GET("/dashboard/filter", dashboardController.DashboardGetByMonth)
 
 	public.GET("/template-message", templateMessageController.GetAllTemplateMessages)
 	public.GET("/template-message/:id", templateMessageController.GetTemplateMessageByID)
@@ -146,6 +150,7 @@ func Init(e *echo.Echo, db *gorm.DB) {
 	user.GET("/peminjaman", peminjamanController.GetAllPeminjamans)
 	user.GET("/peminjaman/:id", peminjamanController.GetPeminjamanByID)
 	admin.GET("/peminjaman", peminjamanController.GetPeminjamansByAdmin)
+	public.GET("/peminjamans", peminjamanController.GetPeminjamansByAdmin)
 	public.GET("/peminjaman/:id", peminjamanController.GetPeminjamanByID)
 	public.GET("/admin/peminjaman/:id", peminjamanController.AdminGetPeminjamanByID)
 	//admin.PUT("/peminjaman/admin/:id", peminjamanController.AdminUpdatePeminjaman)

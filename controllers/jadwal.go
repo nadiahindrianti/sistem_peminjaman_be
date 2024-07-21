@@ -14,8 +14,11 @@ import (
 type JadwalController interface {
 	GetAllJadwals(c echo.Context) error
 	GetJadwalByID(c echo.Context) error
+	AdminGetJadwalByID(c echo.Context) error
+	GetJadwalsDetailByAdmin(c echo.Context) error
 	CreateJadwal(c echo.Context) error
 	UpdateJadwal(c echo.Context) error
+	UpdateJadwalbyAdmin(c echo.Context) error
 	DeleteJadwal(c echo.Context) error
 	SearchJadwalAvailable(c echo.Context) error
 }
@@ -120,6 +123,58 @@ func (c *jadwalController) GetJadwalByID(ctx echo.Context) error {
 
 }
 
+func (c *jadwalController) GetJadwalsDetailByAdmin(ctx echo.Context) error {
+	id, _ := strconv.Atoi(ctx.Param("id"))
+	jadwal, err := c.jadwalUsecase.GetJadwalsDetailByAdmin(uint(id))
+
+	if err != nil {
+		return ctx.JSON(
+			http.StatusBadRequest,
+			helpers.NewErrorResponse(
+				http.StatusBadRequest,
+				"Failed to get jadwal by id",
+				helpers.GetErrorData(err),
+			),
+		)
+	}
+
+	return ctx.JSON(
+		http.StatusOK,
+		helpers.NewResponse(
+			http.StatusOK,
+			"Successfully to get jadwal by id",
+			jadwal,
+		),
+	)
+
+}
+
+func (c *jadwalController) AdminGetJadwalByID(ctx echo.Context) error {
+	id, _ := strconv.Atoi(ctx.Param("id"))
+	jadwal, err := c.jadwalUsecase.AdminGetJadwalByID( uint(id))
+
+	if err != nil {
+		return ctx.JSON(
+			http.StatusBadRequest,
+			helpers.NewErrorResponse(
+				http.StatusBadRequest,
+				"Failed to get jadwal by id",
+				helpers.GetErrorData(err),
+			),
+		)
+	}
+
+	return ctx.JSON(
+		http.StatusOK,
+		helpers.NewResponse(
+			http.StatusOK,
+			"Successfully to get jadwal by id",
+			jadwal,
+		),
+	)
+
+}
+
 func (c *jadwalController) CreateJadwal(ctx echo.Context) error {
 	tokenString := middlewares.GetTokenFromHeader(ctx.Request())
 	if tokenString == "" {
@@ -162,6 +217,61 @@ func (c *jadwalController) CreateJadwal(ctx echo.Context) error {
 			http.StatusCreated,
 			"Successfully to created a jadwal",
 			jadwal,
+		),
+	)
+}
+
+func (c *jadwalController) UpdateJadwalbyAdmin(ctx echo.Context) error {
+
+	// Binding input jadwal
+	var jadwalInput dtos.JadwalInput
+	if err := ctx.Bind(&jadwalInput); err != nil {
+		return ctx.JSON(
+			http.StatusBadRequest,
+			helpers.NewErrorResponse(
+				http.StatusBadRequest,
+				"Failed binding jadwal",
+				helpers.GetErrorData(err),
+			),
+		)
+	}
+
+	// Ambil ID dari parameter URL
+	id, _ := strconv.Atoi(ctx.Param("id"))
+
+	// Dapatkan detail jadwal berdasarkan ID
+	jadwal, err := c.jadwalUsecase.AdminGetJadwalByID(uint(id))
+	if jadwal.JadwalID == 0 {
+		return ctx.JSON(
+			http.StatusBadRequest,
+			helpers.NewErrorResponse(
+				http.StatusBadRequest,
+				"Failed to get peminjaman by id",
+				helpers.GetErrorData(err),
+			),
+		)
+	}
+
+	// Perbarui jadwal
+	jadwalResp, err := c.jadwalUsecase.UpdateJadwalbyAdmin(uint(id), jadwalInput)
+	if err != nil {
+		return ctx.JSON(
+			http.StatusBadRequest,
+			helpers.NewErrorResponse(
+				http.StatusBadRequest,
+				"Failed to update jadwal",
+				helpers.GetErrorData(err),
+			),
+		)
+	}
+
+	// Berhasil memperbarui jadwal
+	return ctx.JSON(
+		http.StatusOK,
+		helpers.NewResponse(
+			http.StatusOK,
+			"Successfully updated jadwal",
+			jadwalResp,
 		),
 	)
 }

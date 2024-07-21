@@ -11,8 +11,8 @@ type JadwalRepository interface {
 	GetJadwalByID(id uint) (models.Jadwal, error)
 	GetJadwalByID2(id uint) (models.Jadwal, error)
 	GetJadwalByID3(id uint, userID uint) (models.Jadwal, error)
-	CreateJadwal(Lab models.Jadwal) (models.Jadwal, error)
-	UpdateJadwal(Lab models.Jadwal) (models.Jadwal, error)
+	CreateJadwal(jadwal models.Jadwal) (models.Jadwal, error)
+	UpdateJadwal(jadwal models.Jadwal) (models.Jadwal, error)
 	DeleteJadwal(id uint) error
 	SearchJadwalAvailable(page, limit int, name_laboratorium string) ([]models.Jadwal, int, error)
 }

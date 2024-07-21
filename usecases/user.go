@@ -770,5 +770,9 @@ func (u *userUsecase) UserAdminUpdate(id uint, input dtos.UserRegisterInputUpdat
 }
 
 func (u *userUsecase) DeleteUser(id uint) error {
-	return u.userRepo.DeleteUser(id)
+	err := u.userRepo.DeleteUser(id)
+	if err != nil {
+		return errors.New("failed to delete user")
+	}
+	return nil
 }

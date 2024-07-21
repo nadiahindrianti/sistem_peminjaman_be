@@ -7,6 +7,7 @@ import (
 	"sistem_peminjaman_be/helpers"
 	"time"
 	"errors"
+	"strings"
 )
 
 type JadwalUsecase interface {
@@ -15,7 +16,9 @@ type JadwalUsecase interface {
 	CreateJadwal(jadwal *dtos.JadwalInput) (dtos.JadwalResponse, error)
 	UpdateJadwal(id uint, jadwalInput dtos.JadwalInput) (dtos.JadwalResponse, error)
 	DeleteJadwal(id uint) error
-
+	GetJadwalsDetailByAdmin(jadwalId uint) (dtos.JadwalResponse, error)
+	AdminGetJadwalByID(jadwalId uint) (dtos.JadwalResponse, error)
+	UpdateJadwalbyAdmin(id uint, jadwal dtos.JadwalInput) (dtos.StatusJadwalResponse, error)
 	SearchJadwalAvailable(userId, page, limit int, name_laboratorium string) ([]dtos.JadwalResponse, int, error)
 }
 
@@ -54,7 +57,7 @@ func (u *jadwalUsecase) GetAllJadwals(page, limit int, name_laboratirum string) 
 		}
 
 		jadwalResponse := dtos.JadwalResponse{
-			JadwalID:           jadwal.ID,
+			JadwalID:           int(jadwal.ID),
 			TanggalJadwal:      helpers.FormatDateToYMD(jadwal.TanggalJadwal),
 			WaktuJadwal:        jadwal.WaktuJadwal,
 			NameUser:           jadwal.NameUser,
@@ -94,7 +97,7 @@ func (u *jadwalUsecase) GetJadwalByID(userId, id uint) (dtos.JadwalResponse, err
 	}
 
 	jadwalResponse := dtos.JadwalResponse{
-		JadwalID:           jadwal.ID,
+		JadwalID:           int(jadwal.ID),
 		TanggalJadwal:      helpers.FormatDateToYMD(jadwal.TanggalJadwal),
 		WaktuJadwal:        jadwal.WaktuJadwal,
 		NameUser:           jadwal.NameUser,
@@ -107,6 +110,89 @@ func (u *jadwalUsecase) GetJadwalByID(userId, id uint) (dtos.JadwalResponse, err
 	return jadwalResponse, nil
 }
 
+func (u *jadwalUsecase) AdminGetJadwalByID(jadwalId uint) (dtos.JadwalResponse, error) {
+    var jadwalResponses dtos.JadwalResponse
+
+    // Mendapatkan data jadwal berdasarkan ID
+    jadwal, err := u.jadwalRepo.GetJadwalByID2(jadwalId)
+    if err != nil {
+        if strings.Contains(err.Error(), "not found") {
+            return jadwalResponses, errors.New("jadwal tidak ditemukan, pastikan ID benar")
+        }
+        return jadwalResponses, errors.New("failed to get jadwal by id")
+    }
+
+    // Mendapatkan data berita acara image berdasarkan ID jadwal
+    beritaAcaraImages, err := u.beritaAcaraImageRepo.GetAllBeritaAcaraImageByID(jadwalId)
+    if err != nil {
+        return jadwalResponses, errors.New("failed to get berita acara image")
+    }
+
+    var beritaAcaraImageResponses []dtos.BeritaAcaraImageResponse
+    for _, beritaAcaraImage := range beritaAcaraImages {
+        beritaAcaraImageResponse := dtos.BeritaAcaraImageResponse{
+            JadwalID:             beritaAcaraImage.JadwalID,
+            BeritaAcaraImageUrl: beritaAcaraImage.BeritaAcaraImageUrl,
+        }
+        beritaAcaraImageResponses = append(beritaAcaraImageResponses, beritaAcaraImageResponse)
+    }
+
+
+    // Membuat respons jadwal
+    jadwalResponse := dtos.JadwalResponse{
+        JadwalID:          int(jadwal.ID),
+        TanggalJadwal:     helpers.FormatDateToYMD(jadwal.TanggalJadwal),
+        WaktuJadwal:         jadwal.WaktuJadwal,
+		NameUser:            jadwal.NameUser,
+		NameLaboratorium:    jadwal.NameLaboratorium,
+        BeritaAcaraImage: beritaAcaraImageResponses,
+        Status:                jadwal.Status,
+        CreatedAt: jadwal.CreatedAt,
+        UpdatedAt: jadwal.UpdatedAt,
+    }
+
+    return jadwalResponse, nil
+}
+
+func (u *jadwalUsecase) GetJadwalsDetailByAdmin(jadwalId uint) (dtos.JadwalResponse, error) {
+	var jadwalResponses dtos.JadwalResponse
+
+	// Mendapatkan data jadwal berdasarkan ID
+	jadwal, err := u.jadwalRepo.GetJadwalByID2(jadwalId)
+	if err != nil {
+		return jadwalResponses, err
+	}
+
+	//Mendapatkan data berita acara image berdasarkan ID jadwal
+	beritaAcaraImagee, err := u.beritaAcaraImageRepo.GetAllBeritaAcaraImageByID(jadwalId)
+	if err != nil {
+		return jadwalResponses, err
+	}
+
+	var beritaAcaraImageResponses []dtos.BeritaAcaraImageResponse
+	for _, beritaAcaraImageee := range beritaAcaraImagee {
+		beritaAcaraImageResponse := dtos.BeritaAcaraImageResponse{
+			JadwalID:             beritaAcaraImageee.JadwalID,
+			BeritaAcaraImageUrl: beritaAcaraImageee.BeritaAcaraImageUrl,
+		}
+		beritaAcaraImageResponses = append(beritaAcaraImageResponses, beritaAcaraImageResponse)
+	}
+
+	// Membuat respons jadwal
+	jadwalResponse := dtos.JadwalResponse{
+		JadwalID:          int(jadwal.ID),
+		TanggalJadwal:     helpers.FormatDateToYMD(jadwal.TanggalJadwal),
+		WaktuJadwal:         jadwal.WaktuJadwal,
+		NameUser:            jadwal.NameUser,
+		NameLaboratorium:    jadwal.NameLaboratorium,
+		BeritaAcaraImage: beritaAcaraImageResponses,
+		Status:                jadwal.Status,
+		CreatedAt: jadwal.CreatedAt,
+		UpdatedAt: jadwal.UpdatedAt,
+	}
+
+	return jadwalResponse, nil
+}
 
 func (u *jadwalUsecase) CreateJadwal(jadwal *dtos.JadwalInput) (dtos.JadwalResponse, error) {
 	var jadwalResponse dtos.JadwalResponse
@@ -179,7 +265,7 @@ func (u *jadwalUsecase) CreateJadwal(jadwal *dtos.JadwalInput) (dtos.JadwalRespo
 
 	// Menyiapkan respons jadwal yang akan dikembalikan
 	jadwalResponse = dtos.JadwalResponse{
-		JadwalID:           createdJadwal.ID,
+		JadwalID:           int(createdJadwal.ID),
 		TanggalJadwal:      helpers.FormatDateToYMD(createdJadwal.TanggalJadwal),
 		WaktuJadwal:        createdJadwal.WaktuJadwal,
 		NameUser:           createdJadwal.NameUser,
@@ -261,7 +347,7 @@ func (u *jadwalUsecase) UpdateJadwal(id uint, jadwal dtos.JadwalInput) (dtos.Jad
 	}
 
 	jadwalResponse = dtos.JadwalResponse{
-		JadwalID:           updatedJadwal.ID,
+		JadwalID:           int(updatedJadwal.ID),
 		TanggalJadwal:      helpers.FormatDateToYMD(updatedJadwal.TanggalJadwal),
 		WaktuJadwal:        updatedJadwal.WaktuJadwal,
 		NameUser:           updatedJadwal.NameUser,
@@ -274,6 +360,32 @@ func (u *jadwalUsecase) UpdateJadwal(id uint, jadwal dtos.JadwalInput) (dtos.Jad
 	return jadwalResponse, nil
 }
 
+func (u *jadwalUsecase) UpdateJadwalbyAdmin(id uint, jadwal dtos.JadwalInput) (dtos.StatusJadwalResponse, error) {
+	var jadwals models.Jadwal
+	var statusJadwalResponse dtos.StatusJadwalResponse
+
+	jadwals, err := u.jadwalRepo.GetJadwalByID2(id)
+	if err != nil {
+		return statusJadwalResponse, err
+	}
+
+	if jadwal.Status == "" {
+		return statusJadwalResponse, errors.New("failed to update jadwal")
+	}
+	
+	jadwals.Status = jadwal.Status
+
+	updatedJadwal, err := u.jadwalRepo.UpdateJadwal(jadwals)
+	if err != nil {
+		return statusJadwalResponse, err
+	}
+
+	statusJadwalResponse = dtos.StatusJadwalResponse{
+		Status:                updatedJadwal.Status,
+	}
+
+	return statusJadwalResponse, nil
+}
 
 func (u *jadwalUsecase) DeleteJadwal(id uint) error {
 	return u.jadwalRepo.DeleteJadwal(id)
@@ -304,7 +416,7 @@ func (u *jadwalUsecase) SearchJadwalAvailable(userId, page, limit int, name_labo
 		}
 
 		jadwalResponse := dtos.JadwalResponse{
-			JadwalID:           jadwal.ID,
+			JadwalID:           int(jadwal.ID),
 			TanggalJadwal:      helpers.FormatDateToYMD(jadwal.TanggalJadwal),
 			WaktuJadwal:        jadwal.WaktuJadwal,
 			NameUser:           jadwal.NameUser,

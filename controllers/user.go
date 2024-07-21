@@ -714,6 +714,17 @@ func (c *UserController) UserAdminUpdate(ctx echo.Context) error {
 }
 
 func (c *UserController) DeleteUser(ctx echo.Context) error {
+	tokenString := middlewares.GetTokenFromHeader(ctx.Request())
+	if tokenString == "" {
+		return ctx.JSON(
+			http.StatusUnauthorized,
+			helpers.NewErrorResponse(
+				http.StatusUnauthorized,
+				"No token provided",
+				"Unauthorized",
+			),
+		)
+	}
 	id, _ := strconv.Atoi(ctx.Param("id"))
 
 	err := c.userUsecase.DeleteUser(uint(id))
@@ -736,3 +747,4 @@ func (c *UserController) DeleteUser(ctx echo.Context) error {
 		),
 	)
 }
+
